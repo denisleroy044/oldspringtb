@@ -76,6 +76,7 @@ function AccountContent() {
         lastName: user.lastName || '',
         email: user.email || '',
         phone: user.phone || ''
+      }
 
     return () => {
       window.removeEventListener('sidebarChange' as any, handleSidebarChange)
