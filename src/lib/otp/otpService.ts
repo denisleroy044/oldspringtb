@@ -1,151 +1,99 @@
-import { sendEmail, generateOTP, getOTPEmailTemplate } from './emailService';
+import { sendEmail, generateOTPEmail } from './emailService';
 
-interface OTPData {
-  code: string;
-  email: string;
-  purpose: string;
-  expiresAt: number;
-  attempts: number;
-  verified: boolean;
-}
+// Mock OTP storage (in production, use Redis or database)
+const otpStore: Map<string, { code: string; expires: Date; attempts: number }> = new Map();
 
-// Store OTPs in memory (in production, use Redis)
-const otpStore: Map<string, OTPData> = new Map();
+// Generate a random 6-digit OTP
+export const generateOTP = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
-const MAX_ATTEMPTS = 3;
-const OTP_EXPIRY = 10 * 60 * 1000; // 10 minutes
-
-export async function requestOTP(email: string, purpose: string): Promise<{
-  success: boolean;
-  requestId?: string;
-  message: string;
-}> {
+// Request OTP for a user
+export const requestOTP = async (
+  identifier: string,
+  purpose: string
+): Promise<{ success: boolean; requestId?: string; message?: string }> => {
   try {
     // Generate OTP
     const otp = generateOTP();
-    const requestId = `otp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
-    // Store OTP
+    // Store OTP with 10-minute expiration
     otpStore.set(requestId, {
       code: otp,
-      email,
-      purpose,
-      expiresAt: Date.now() + OTP_EXPIRY,
-      attempts: 0,
-      verified: false
+      expires: new Date(Date.now() + 10 * 60 * 1000),
+      attempts: 0
     });
 
-    // Send email
-    const emailSent = await sendEmail({
-      to: email,
-      subject: `Your OTP for ${purpose}`,
-      html: getOTPEmailTemplate(otp, purpose)
-    });
-
-    if (!emailSent) {
-      return {
-        success: false,
-        message: 'Failed to send OTP email. Please try again.'
-      };
+    // For email identifiers
+    if (identifier.includes('@')) {
+      const emailContent = generateOTPEmail(otp);
+      emailContent.to = identifier;
+      await sendEmail(emailContent);
     }
-
-    // Clean up old OTPs for this email
-    for (const [id, data] of otpStore.entries()) {
-      if (data.email === email && data.expiresAt < Date.now()) {
-        otpStore.delete(id);
-      }
+    // For phone numbers (SMS) - implement SMS service here
+    else {
+      console.log(`📱 SMS would be sent to ${identifier} with code: ${otp}`);
+      // Integrate with SMS service like Twilio here
     }
 
     return {
       success: true,
       requestId,
-      message: 'OTP sent successfully to your email'
+      message: 'OTP sent successfully'
     };
   } catch (error) {
-    console.error('OTP request error:', error);
+    console.error('Error sending OTP:', error);
     return {
       success: false,
-      message: 'Failed to process OTP request'
+      message: 'Failed to send OTP'
     };
   }
-}
+};
 
-export async function verifyOTP(
+// Verify OTP
+export const verifyOTP = async (
   requestId: string,
   code: string
-): Promise<{
-  success: boolean;
-  message: string;
-  email?: string;
-}> {
+): Promise<boolean> => {
   const otpData = otpStore.get(requestId);
-
+  
   if (!otpData) {
-    return {
-      success: false,
-      message: 'Invalid or expired OTP request'
-    };
+    return false;
   }
 
-  // Check if already verified
-  if (otpData.verified) {
-    return {
-      success: false,
-      message: 'OTP already verified'
-    };
-  }
-
-  // Check expiry
-  if (Date.now() > otpData.expiresAt) {
+  // Check if expired
+  if (new Date() > otpData.expires) {
     otpStore.delete(requestId);
-    return {
-      success: false,
-      message: 'OTP has expired. Please request a new one.'
-    };
+    return false;
   }
 
-  // Check attempts
-  if (otpData.attempts >= MAX_ATTEMPTS) {
+  // Check attempts (max 3 attempts)
+  if (otpData.attempts >= 3) {
     otpStore.delete(requestId);
-    return {
-      success: false,
-      message: 'Too many failed attempts. Please request a new OTP.'
-    };
+    return false;
   }
+
+  // Increment attempts
+  otpData.attempts++;
 
   // Verify code
-  if (otpData.code !== code) {
-    otpData.attempts++;
-    otpStore.set(requestId, otpData);
-    
-    const remainingAttempts = MAX_ATTEMPTS - otpData.attempts;
-    return {
-      success: false,
-      message: `Invalid OTP. ${remainingAttempts} attempts remaining.`
-    };
+  if (otpData.code === code) {
+    otpStore.delete(requestId);
+    return true;
   }
 
-  // Success
-  otpData.verified = true;
-  otpStore.set(requestId, otpData);
+  return false;
+};
 
-  // Clean up after successful verification (optional)
-  setTimeout(() => {
-    otpStore.delete(requestId);
-  }, 60000); // Remove after 1 minute
-
-  return {
-    success: true,
-    message: 'OTP verified successfully',
-    email: otpData.email
-  };
-}
-
-export function isOTPVerified(requestId: string): boolean {
-  const otpData = otpStore.get(requestId);
-  return otpData?.verified || false;
-}
-
-export function clearOTP(requestId: string): void {
+// Resend OTP
+export const resendOTP = async (
+  requestId: string,
+  identifier: string
+): Promise<{ success: boolean; newRequestId?: string; message?: string }> => {
+  // Delete old OTP
   otpStore.delete(requestId);
-}
+  
+  // Request new OTP
+  return requestOTP(identifier, 'resend');
+};
