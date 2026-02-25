@@ -143,8 +143,7 @@ function AccountContent() {
     if (!user) return
     
     const updated = updateUserProfile({ id: user.id,
-      firstName: editForm.firstName,
-      lastName: editForm.lastName,
+      name: `${editForm.firstName} ${editForm.lastName}`.trim(),
       email: editForm.email,
       phone: editForm.phone,
       accountName: `${editForm.firstName} ${editForm.lastName}`
