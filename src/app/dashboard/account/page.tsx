@@ -35,8 +35,7 @@ function AccountContent() {
   const [editForm, setEditForm] = useState({
     firstName: '',
     lastName: '',
-    email: '',
-    phone: ''
+    email: ''
   })
   
   const [passwordForm, setPasswordForm] = useState({
@@ -63,8 +62,7 @@ function AccountContent() {
       setEditForm({
         firstName: nameParts[0] || '',
         lastName: nameParts.slice(1).join(' ') || '',
-        email: user.email || '',
-        phone: user.phone || ''
+        email: user.email || ''
       })
       setTwoFactorEnabled(user.twoFactorEnabled || false)
       if (user.notificationPreferences) {
@@ -182,7 +180,7 @@ function AccountContent() {
     setIsLoading(true)
     
     try {
-      const response = await requestOTP(user.phone || '1234567890', '2fa')
+      const response = await requestOTP(user.email, '2fa')
       if (response.requestId) {
         setOtpRequestId(response.requestId)
         setPendingAction({ type: '2fa', data: !twoFactorEnabled })
@@ -374,18 +372,6 @@ function AccountContent() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone (for 2FA)</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={editForm.phone}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
-                      placeholder="+1 (555) 123-4567"
-                    />
-                  </div>
-
                   <div className="flex gap-3 pt-4">
                     <button
                       type="submit"
@@ -403,8 +389,7 @@ function AccountContent() {
                           setEditForm({
                             firstName: nameParts[0] || '',
                             lastName: nameParts.slice(1).join(' ') || '',
-                            email: user.email || '',
-                            phone: user.phone || ''
+                            email: user.email || ''
                           })
                         }
                       }}
@@ -429,10 +414,6 @@ function AccountContent() {
                   <div>
                     <p className="text-sm text-gray-500">Email</p>
                     <p className="font-medium">{user.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Phone</p>
-                    <p className="font-medium">{editForm.phone || 'Not set'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Account Type</p>
@@ -520,7 +501,7 @@ function AccountContent() {
                 </div>
                 <p className="text-sm text-gray-600">
                   {twoFactorEnabled 
-                    ? 'Two-factor authentication is enabled. You\'ll need a verification code from your authenticator app or SMS to sign in.' 
+                    ? 'Two-factor authentication is enabled. You\'ll need a verification code from your authenticator app or email to sign in.' 
                     : 'Enable two-factor authentication to protect your account with an additional verification step.'}
                 </p>
               </div>
@@ -698,7 +679,7 @@ function AccountContent() {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
               <h3 className="text-xl font-bold text-deep-teal mb-2">Verify Your Identity</h3>
-              <p className="text-gray-600 mb-4">Enter the verification code sent to your phone.</p>
+              <p className="text-gray-600 mb-4">Enter the verification code sent to your email.</p>
               
               <input
                 type="text"
