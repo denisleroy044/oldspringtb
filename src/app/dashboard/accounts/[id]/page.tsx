@@ -1,417 +1,418 @@
 'use client'
 
-import { DashboardProvider, useDashboardContext } from '@/context/DashboardContext'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
-import { Header } from '@/components/dashboard/Header'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { DashboardFooter } from '@/components/dashboard/Footer'
 import { getUserAccounts, getAccountTransactions, transferBetweenAccounts, BankAccount, AccountTransaction } from '@/lib/accounts/accountService'
 import { OTPModal } from '@/components/dashboard/otp/OTPModal'
 import { requestOTP, verifyOTP } from '@/lib/otp/otpUtils'
+import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
 
-function AccountDetailContent() {
+export default function AccountDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { user } = useDashboardContext()
   const { user: authUser } = useAuth()
   const [account, setAccount] = useState<BankAccount | null>(null)
-  const [transactions, setTransactions] = useState<AccountTransaction[]>([])
-  const [showTransferModal, setShowTransferModal] = useState(false)
   const [accounts, setAccounts] = useState<BankAccount[]>([])
-  const [transferForm, setTransferForm] = useState({
-    toAccountId: '',
-    amount: '',
-    description: ''
-  })
-  const [showOTP, setShowOTP] = useState(false)
-  const [otpRequestId, setOtpRequestId] = useState('')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [transactions, setTransactions] = useState<AccountTransaction[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showTransferModal, setShowTransferModal] = useState(false)
+  const [transferAmount, setTransferAmount] = useState('')
+  const [selectedToAccount, setSelectedToAccount] = useState<string>('')
+  const [transferDescription, setTransferDescription] = useState('')
+  const [showOtpModal, setShowOtpModal] = useState(false)
+  const [otpRequestId, setOtpRequestId] = useState<string | null>(null)
+  const [otpCode, setOtpCode] = useState('')
+  const [pendingTransfer, setPendingTransfer] = useState<{
+    fromAccountId: string
+    toAccountId: string
+    amount: number
+    description: string
+  } | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   useEffect(() => {
-    const handleSidebarChange = (e: CustomEvent) => {
-      setSidebarCollapsed(e.detail.collapsed)
-    }
-
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024)
-    }
-
-    window.addEventListener('sidebarChange' as any, handleSidebarChange)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-
-    if (authUser && params.id) {
-      const userAccounts = getUserAccounts(authUser.id)
-      const currentAccount = userAccounts.find(a => a.id === params.id)
-      if (currentAccount) {
-        setAccount(currentAccount)
-        setAccounts(userAccounts.filter(a => a.id !== params.id))
-        const accountTransactions = getAccountTransactions(authUser.id, params.id as string)
-        setTransactions(accountTransactions)
+    const loadAccountData = async () => {
+      if (!authUser || !params.id) return
+      
+      try {
+        const userAccounts = await getUserAccounts(authUser.id)
+        const currentAccount = userAccounts.find(a => a.id === params.id)
+        
+        if (currentAccount) {
+          setAccount(currentAccount)
+          setAccounts(userAccounts.filter(a => a.id !== params.id))
+          
+          const accountTransactions = await getAccountTransactions(params.id as string, 20)
+          setTransactions(accountTransactions)
+        } else {
+          router.push('/dashboard')
+        }
+      } catch (error) {
+        console.error('Error loading account:', error)
+      } finally {
+        setLoading(false)
       }
     }
 
-    return () => {
-      window.removeEventListener('sidebarChange' as any, handleSidebarChange)
-      window.removeEventListener('resize', checkMobile)
-    }
-  }, [authUser, params.id])
+    loadAccountData()
+  }, [authUser, params.id, router])
 
-  if (!authUser || !user || !account) {
+  const handleTransfer = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!account || !selectedToAccount || !transferAmount) return
+
+    const amount = parseFloat(transferAmount)
+    if (isNaN(amount) || amount <= 0) {
+      setMessage({ type: 'error', text: 'Please enter a valid amount' })
+      return
+    }
+
+    if (amount > account.balance) {
+      setMessage({ type: 'error', text: 'Insufficient funds' })
+      return
+    }
+
+    try {
+      const response = await requestOTP(authUser?.email || '', 'transfer')
+      if (response.requestId) {
+        setOtpRequestId(response.requestId)
+        setPendingTransfer({
+          fromAccountId: account.id,
+          toAccountId: selectedToAccount,
+          amount,
+          description: transferDescription || 'Account transfer'
+        })
+        setShowOtpModal(true)
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to request OTP' })
+    }
+  }
+
+  const handleOtpVerify = async () => {
+    if (!otpRequestId || !pendingTransfer || !authUser) return
+
+    try {
+      const isValid = await verifyOTP(otpRequestId, otpCode)
+      if (isValid) {
+        const result = await transferBetweenAccounts(
+          pendingTransfer.fromAccountId,
+          pendingTransfer.toAccountId,
+          pendingTransfer.amount,
+          pendingTransfer.description
+        )
+
+        if (result.success) {
+          // Refresh account data
+          const userAccounts = await getUserAccounts(authUser.id)
+          const updatedAccount = userAccounts.find(a => a.id === params.id)
+          if (updatedAccount) {
+            setAccount(updatedAccount)
+          }
+          
+          const accountTransactions = await getAccountTransactions(params.id as string, 20)
+          setTransactions(accountTransactions)
+          
+          setMessage({ type: 'success', text: 'Transfer completed successfully' })
+          setShowTransferModal(false)
+          setTransferAmount('')
+          setSelectedToAccount('')
+          setTransferDescription('')
+        } else {
+          setMessage({ type: 'error', text: result.error || 'Transfer failed' })
+        }
+      } else {
+        setMessage({ type: 'error', text: 'Invalid OTP code' })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Verification failed' })
+    } finally {
+      setShowOtpModal(false)
+      setOtpCode('')
+      setPendingTransfer(null)
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount)
+  }
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(new Date(date))
+  }
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1e3a5f]"></div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-deep-teal border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading account details...</p>
+          </div>
+        </div>
       </div>
     )
   }
 
-  const handleTransfer = async () => {
-    const amount = parseFloat(transferForm.amount)
-    if (amount <= 0) return
-    if (amount > account.balance) {
-      alert('Insufficient funds')
-      return
-    }
-
-    const response = await requestOTP(user.phone, 'transfer')
-    if (response.success && response.requestId) {
-      setOtpRequestId(response.requestId)
-      setShowOTP(true)
-    }
-  }
-
-  const handleOTPVerify = async (code: string): Promise<boolean> => {
-    if (code === 'RESEND') {
-      const response = await requestOTP(user.phone, 'transfer')
-      if (response.requestId) {
-        setOtpRequestId(response.requestId)
-      }
-      return true
-    }
-
-    const isValid = await verifyOTP(otpRequestId, code)
-    
-    if (isValid && authUser) {
-      const result = transferBetweenAccounts(
-        authUser.id,
-        account.id,
-        transferForm.toAccountId,
-        parseFloat(transferForm.amount),
-        transferForm.description
-      )
-
-      if (result.success) {
-        // Refresh account data
-        const userAccounts = getUserAccounts(authUser.id)
-        const updatedAccount = userAccounts.find(a => a.id === account.id)
-        if (updatedAccount) {
-          setAccount(updatedAccount)
-          const accountTransactions = getAccountTransactions(authUser.id, account.id)
-          setTransactions(accountTransactions)
-        }
-        setShowTransferModal(false)
-        setTransferForm({ toAccountId: '', amount: '', description: '' })
-      } else {
-        alert(result.message)
-      }
-    }
-    
-    return isValid
-  }
-
-  const getAccountIcon = (type: string) => {
-    switch(type) {
-      case 'checking': return '💳'
-      case 'savings': return '🏦'
-      case 'money_market': return '📈'
-      case 'cd': return '⏰'
-      default: return '🏦'
-    }
-  }
-
-  const getTransactionIcon = (type: string) => {
-    switch(type) {
-      case 'deposit': return '↓'
-      case 'withdrawal': return '↑'
-      case 'transfer': return '↔️'
-      case 'interest': return '📈'
-      case 'fee': return '💰'
-      default: return '•'
-    }
-  }
-
-  const getTransactionColor = (type: string) => {
-    switch(type) {
-      case 'deposit':
-      case 'interest':
-        return 'text-green-600'
-      case 'withdrawal':
-      case 'fee':
-        return 'text-red-600'
-      case 'transfer':
-        return 'text-blue-600'
-      default:
-        return 'text-gray-600'
-    }
+  if (!account) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 p-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Account Not Found</h2>
+            <p className="text-gray-600 mb-6">The account you're looking for doesn't exist or you don't have access.</p>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="bg-deep-teal text-white px-6 py-3 rounded-lg hover:bg-soft-gold transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
-      <div className={`flex-1 transition-all duration-300 flex flex-col ${
-        !isMobile && (sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64')
-      }`}>
-        <Header />
-        <main className="flex-1 pt-20 lg:pt-24 px-4 lg:px-6 pb-6">
-          {/* Back Button */}
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="mb-6 flex items-center text-gray-600 hover:text-[#1e3a5f] transition"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Dashboard
-          </button>
-
-          {/* Account Header */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center space-x-4">
-                <div className={`w-16 h-16 bg-gradient-to-r ${
-                  account.type === 'checking' ? 'from-blue-500 to-blue-700' :
-                  account.type === 'savings' ? 'from-green-500 to-green-700' :
-                  account.type === 'money_market' ? 'from-purple-500 to-purple-700' :
-                  'from-orange-500 to-orange-700'
-                } rounded-2xl flex items-center justify-center text-3xl`}>
-                  {getAccountIcon(account.type)}
-                </div>
+      <div className="flex-1 flex flex-col">
+        <main className="flex-1 p-4 md:p-8">
+          <ScrollAnimation animation="fadeIn">
+            {/* Header */}
+            <div className="mb-8">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="text-deep-teal hover:text-soft-gold transition-colors mb-4 flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Dashboard
+              </button>
+              
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">{account.accountName}</h1>
-                  <p className="text-gray-500 mt-1 capitalize">{account.type.replace('_', ' ')} • {account.accountNumber}</p>
+                  <h1 className="text-3xl font-bold text-deep-teal">{account.name}</h1>
+                  <p className="text-gray-600">{account.accountNumber}</p>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-500 mb-1">Current Balance</p>
-                <p className="text-3xl font-bold text-[#1e3a5f]">${account.balance.toFixed(2)}</p>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">Current Balance</p>
+                  <p className="text-4xl font-bold text-soft-gold">{formatCurrency(account.balance)}</p>
+                </div>
               </div>
             </div>
 
-            {/* Account Details Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200">
-              {account.interestRate ? (
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Interest Rate</p>
-                  <p className="font-semibold">{account.interestRate}% APY</p>
-                </div>
-              ) : null}
-              {account.monthlyFee !== undefined && (
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Monthly Fee</p>
-                  <p className="font-semibold">${account.monthlyFee}</p>
-                </div>
-              )}
-              {account.minimumBalance ? (
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Minimum Balance</p>
-                  <p className="font-semibold">${account.minimumBalance}</p>
-                </div>
-              ) : null}
-              {account.maturityDate && (
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Maturity Date</p>
-                  <p className="font-semibold">{new Date(account.maturityDate).toLocaleDateString()}</p>
-                </div>
-              )}
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Opened</p>
-                <p className="font-semibold">{new Date(account.createdAt).toLocaleDateString()}</p>
+            {message && (
+              <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                {message.text}
               </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Status</p>
-                <p className="font-semibold capitalize">{account.status}</p>
-              </div>
-            </div>
+            )}
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3 mt-6">
+            {/* Actions */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <button
                 onClick={() => setShowTransferModal(true)}
                 disabled={accounts.length === 0}
-                className="px-4 py-2 bg-[#1e3a5f] text-white rounded-lg text-sm font-medium hover:bg-[#2b4c7a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-4 bg-white rounded-xl shadow hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Transfer Money
-              </button>
-              <button className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
-                Download Statement
-              </button>
-              <button className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
-                View Details
-              </button>
-            </div>
-          </div>
-
-          {/* Account Features */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Features</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {account.features.map((feature, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-sm text-gray-700">{feature}</span>
+                <div className="w-10 h-10 bg-soft-gold/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-soft-gold text-xl">↗️</span>
                 </div>
-              ))}
+                <p className="text-sm font-medium text-gray-700">Transfer</p>
+              </button>
+              
+              <button className="p-4 bg-white rounded-xl shadow hover:shadow-lg transition-all">
+                <div className="w-10 h-10 bg-soft-gold/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-soft-gold text-xl">📄</span>
+                </div>
+                <p className="text-sm font-medium text-gray-700">Statements</p>
+              </button>
+              
+              <button className="p-4 bg-white rounded-xl shadow hover:shadow-lg transition-all">
+                <div className="w-10 h-10 bg-soft-gold/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-soft-gold text-xl">⚙️</span>
+                </div>
+                <p className="text-sm font-medium text-gray-700">Settings</p>
+              </button>
+              
+              <button className="p-4 bg-white rounded-xl shadow hover:shadow-lg transition-all">
+                <div className="w-10 h-10 bg-soft-gold/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-soft-gold text-xl">📞</span>
+                </div>
+                <p className="text-sm font-medium text-gray-700">Help</p>
+              </button>
             </div>
-          </div>
 
-          {/* Transaction History */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Transaction History</h2>
-            {transactions.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No transactions yet</p>
+            {/* Transactions */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="p-6 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-deep-teal">Recent Transactions</h2>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {transactions.slice(0, 10).map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        tx.type === 'deposit' || tx.type === 'interest' ? 'bg-green-100' :
-                        tx.type === 'withdrawal' || tx.type === 'fee' ? 'bg-red-100' :
-                        'bg-blue-100'
-                      }`}>
-                        <span className={getTransactionColor(tx.type)}>{getTransactionIcon(tx.type)}</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{tx.description}</p>
-                        <p className="text-xs text-gray-500">{new Date(tx.createdAt).toLocaleString()}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-sm font-semibold ${getTransactionColor(tx.type)}`}>
-                        {tx.type === 'deposit' || tx.type === 'interest' ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
-                      </p>
-                      <p className="text-xs text-gray-500">Balance: ${tx.balance.toFixed(2)}</p>
-                    </div>
-                  </div>
-                ))}
+              
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {transactions.length > 0 ? (
+                      transactions.map((tx) => (
+                        <tr key={tx.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(tx.createdAt)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {tx.description}
+                            {tx.counterparty && (
+                              <span className="block text-xs text-gray-500">{tx.counterparty}</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                            {tx.category || 'other'}
+                          </td>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
+                            tx.amount > 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {tx.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(tx.amount))}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              tx.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              tx.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {tx.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                          No transactions found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-            )}
-          </div>
+            </div>
+          </ScrollAnimation>
         </main>
         <DashboardFooter />
       </div>
 
       {/* Transfer Modal */}
       {showTransferModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Transfer Money</h3>
-            </div>
-            <div className="p-6 space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-deep-teal mb-4">Transfer Money</h3>
+            
+            <form onSubmit={handleTransfer} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">From Account</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">From Account</label>
                 <input
                   type="text"
-                  value={`${account.accountName} (${account.accountNumber})`}
-                  readOnly
-                  className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-700"
+                  value={account.name}
+                  disabled
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">To Account</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">To Account</label>
                 <select
-                  value={transferForm.toAccountId}
-                  onChange={(e) => setTransferForm({...transferForm, toAccountId: e.target.value})}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#1e3a5f]"
+                  value={selectedToAccount}
+                  onChange={(e) => setSelectedToAccount(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                  required
                 >
                   <option value="">Select account</option>
-                  {accounts.map(acc => (
+                  {accounts.map((acc) => (
                     <option key={acc.id} value={acc.id}>
-                      {acc.accountName} ({acc.accountNumber.slice(-4)}) - ${acc.balance.toFixed(2)}
+                      {acc.name} - {formatCurrency(acc.balance)}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-3 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    value={transferForm.amount}
-                    onChange={(e) => setTransferForm({...transferForm, amount: e.target.value})}
-                    placeholder="0.00"
-                    min="0.01"
-                    max={account.balance}
-                    step="0.01"
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#1e3a5f]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
                 <input
-                  type="text"
-                  value={transferForm.description}
-                  onChange={(e) => setTransferForm({...transferForm, description: e.target.value})}
-                  placeholder="Transfer"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#1e3a5f]"
+                  type="number"
+                  value={transferAmount}
+                  onChange={(e) => setTransferAmount(e.target.value)}
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0.01"
+                  max={account.balance}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                  required
                 />
               </div>
 
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <p className="text-xs text-blue-700">
-                  Available balance after transfer: ${(account.balance - parseFloat(transferForm.amount || '0')).toFixed(2)}
-                </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                <input
+                  type="text"
+                  value={transferDescription}
+                  onChange={(e) => setTransferDescription(e.target.value)}
+                  placeholder="e.g., Rent payment"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                />
               </div>
 
-              <div className="flex space-x-3 pt-4">
+              <div className="flex gap-3 pt-4">
                 <button
-                  onClick={() => setShowTransferModal(false)}
-                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleTransfer}
-                  disabled={!transferForm.toAccountId || !transferForm.amount}
-                  className="flex-1 px-4 py-3 bg-[#1e3a5f] text-white rounded-xl font-medium hover:bg-[#2b4c7a] disabled:opacity-50"
+                  type="submit"
+                  className="flex-1 bg-deep-teal text-white py-2 rounded-lg hover:bg-soft-gold transition-colors"
                 >
                   Continue
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShowTransferModal(false)}
+                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* OTP Modal */}
-      <OTPModal
-        isOpen={showOTP}
-        onClose={() => setShowOTP(false)}
-        onVerify={handleOTPVerify}
-        phoneNumber={user.phone}
-        purpose="transfer verification"
-      />
+      {showOtpModal && (
+        <OTPModal
+          requestId={otpRequestId || ''}
+          onVerify={handleOtpVerify}
+          onClose={() => {
+            setShowOtpModal(false)
+            setOtpCode('')
+            setPendingTransfer(null)
+          }}
+        />
+      )}
     </div>
-  )
-}
-
-export default function AccountDetailPage() {
-  return (
-    <DashboardProvider>
-      <AccountDetailContent />
-    </DashboardProvider>
   )
 }
