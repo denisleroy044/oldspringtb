@@ -142,7 +142,7 @@ function AccountContent() {
   const handleSaveProfile = () => {
     if (!user) return
     
-    const updated = updateUserProfile(user.id, {
+    const updated = updateUserProfile({ id: user.id,
       firstName: editForm.firstName,
       lastName: editForm.lastName,
       email: editForm.email,
