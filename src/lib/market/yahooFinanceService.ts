@@ -1,5 +1,19 @@
 import yahooFinance from 'yahoo-finance2'
 
+// Define types for Yahoo Finance responses
+interface YahooQuoteResponse {
+  symbol: string
+  longName?: string
+  shortName?: string
+  regularMarketPrice?: number
+  regularMarketChange?: number
+  regularMarketChangePercent?: number
+  regularMarketVolume?: number
+  marketCap?: number
+  currency?: string
+  exchange?: string
+}
+
 export interface MarketAsset {
   id: string
   symbol: string
@@ -34,7 +48,7 @@ export const POPULAR_SYMBOLS = {
 }
 
 // Cache implementation to avoid rate limits
-const cache: Map<string, { data: any; timestamp: number }> = new Map()
+const cache: Map<string, { data: MarketAsset; timestamp: number }> = new Map()
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 // Get real-time quote for a symbol
@@ -46,7 +60,8 @@ export async function getQuote(symbol: string): Promise<MarketAsset | null> {
       return cached.data
     }
 
-    const quote = await yahooFinance.quote(symbol)
+    // Fetch quote from Yahoo Finance
+    const quote = await yahooFinance.quote(symbol) as YahooQuoteResponse
     
     // Determine asset type based on symbol pattern or exchange
     let type: MarketAsset['type'] = 'stock'
