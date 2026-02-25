@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic'
 'use client'
 
 import { useState } from 'react'
@@ -6,6 +5,8 @@ import { DashboardHeader } from '@/components/dashboard/Header'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { DashboardFooter } from '@/components/dashboard/Footer'
 import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
+
+export const dynamic = 'force-dynamic'
 
 export default function SupportPage() {
   const [activeTab, setActiveTab] = useState('faq')

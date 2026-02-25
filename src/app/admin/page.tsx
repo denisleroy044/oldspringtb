@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic'
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -6,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { loadUsers, saveUsers, addUserNotification, User } from '@/lib/auth/authService'
 import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
+
+export const dynamic = 'force-dynamic'
 
 export default function AdminPage() {
   const { user: authUser } = useAuth()
