@@ -14,6 +14,16 @@ interface YahooQuoteResponse {
   exchange?: string
 }
 
+interface YahooHistoricalResponse {
+  date: Date
+  open: number
+  high: number
+  low: number
+  close: number
+  volume: number
+  adjClose?: number
+}
+
 export interface MarketAsset {
   id: string
   symbol: string
@@ -113,10 +123,9 @@ export async function getHistoricalData(
     const queryOptions = {
       period1: getPeriodStart(period),
       interval: interval,
-      return: 'object' as const
     }
 
-    const result = await yahooFinance.historical(symbol, queryOptions)
+    const result = await yahooFinance.historical(symbol, queryOptions) as YahooHistoricalResponse[]
     
     return result.map(item => ({
       date: new Date(item.date),
