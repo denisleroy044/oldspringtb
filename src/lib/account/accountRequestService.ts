@@ -1,192 +1,104 @@
-import { AccountRequest, AccountType, AccountRequestStatus, AdminNote } from '@/types/account'
-import { addUserNotification } from '@/lib/auth/authService'
-import { accountProducts } from './products'
+// Account request service for tracking account opening requests
 
-// Store account requests (in production, use database)
-const requestStore: Map<string, AccountRequest[]> = new Map()
-
-// Get all pending requests (admin)
-export const getPendingRequests = (): AccountRequest[] => {
-  const allRequests: AccountRequest[] = []
-  requestStore.forEach(requests => {
-    allRequests.push(...requests.filter(r => r.status === 'pending'))
-  })
-  return allRequests.sort((a, b) => 
-    new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-  )
+export interface AccountRequest {
+  id: string
+  userId: string
+  accountType: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: Date
+  updatedAt: Date
 }
 
-// Get user's requests
-export const getUserRequests = (userId: string): AccountRequest[] => {
+// In-memory store (replace with database in production)
+const requestStore = new Map<string, AccountRequest[]>()
+
+export async function createAccountRequest(data: Omit<AccountRequest, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<AccountRequest> {
+  const request: AccountRequest = {
+    ...data,
+    id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    status: 'pending',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
+
+  if (!requestStore.has(data.userId)) {
+    requestStore.set(data.userId, [])
+  }
+  
+  requestStore.get(data.userId)!.push(request)
+  return request
+}
+
+export async function getAccountRequestsByUser(userId: string): Promise<AccountRequest[]> {
   return requestStore.get(userId) || []
 }
 
-// Submit new account request
-export const submitAccountRequest = (
-  userId: string,
-  userName: string,
-  userEmail: string,
-  type: AccountType,
-  accountName: string,
-  initialDeposit: number
-): { success: boolean; request?: AccountRequest; message?: string } => {
+export async function getAllAccountRequests(): Promise<AccountRequest[]> {
+  const allRequests: AccountRequest[] = []
   
-  const product = accountProducts.find(p => p.type === type)
-  if (!product) {
-    return { success: false, message: 'Invalid account type' }
-  }
-
-  if (initialDeposit < product.minimumDeposit) {
-    return { success: false, message: `Minimum deposit of $${product.minimumDeposit} required` }
-  }
-
-  const newRequest: AccountRequest = {
-    id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    userId,
-    userName,
-    userEmail,
-    type,
-    accountName: accountName || `${product.name} - ${userName}`,
-    initialDeposit,
-    status: 'pending',
-    submittedAt: new Date().toISOString()
-  }
-
-  const userRequests = requestStore.get(userId) || []
-  userRequests.push(newRequest)
-  requestStore.set(userId, userRequests)
-
-  // Notify user
-  addUserNotification(userId, {
-    title: '📋 Account Request Submitted',
-    message: `Your request to open a ${product.name} has been submitted for review. You'll hear back within 1-2 business days.`,
-    type: 'info'
+  // Use Array.from instead of direct iteration to avoid downlevelIteration issue
+  Array.from(requestStore.entries()).forEach(([_, requests]) => {
+    allRequests.push(...requests)
   })
-
-  return { success: true, request: newRequest }
+  
+  return allRequests
 }
 
-// Approve request (admin)
-export const approveRequest = (
-  requestId: string,
-  userId: string,
-  adminId: string,
-  adminName: string,
-  notes?: string
-): { success: boolean; message?: string } => {
+export async function getAccountRequestById(requestId: string): Promise<AccountRequest | null> {
+  let foundRequest: AccountRequest | null = null
   
-  // Find the request
-  let foundRequest: AccountRequest | undefined
-  let foundUserId: string | undefined
-
-  for (const [uid, requests] of requestStore.entries()) {
+  // Use Array.from instead of direct iteration
+  Array.from(requestStore.entries()).forEach(([_, requests]) => {
     const req = requests.find(r => r.id === requestId)
     if (req) {
       foundRequest = req
-      foundUserId = uid
-      break
     }
-  }
-
-  if (!foundRequest || !foundUserId) {
-    return { success: false, message: 'Request not found' }
-  }
-
-  // Update request status
-  foundRequest.status = 'approved'
-  foundRequest.reviewedAt = new Date().toISOString()
-  foundRequest.reviewedBy = adminName
-
-  if (notes) {
-    if (!foundRequest.notes) foundRequest.notes = []
-    foundRequest.notes.push({
-      id: `note_${Date.now()}`,
-      adminId,
-      adminName,
-      content: notes,
-      createdAt: new Date().toISOString()
-    })
-  }
-
-  // Save back to store
-  const userRequests = requestStore.get(foundUserId) || []
-  const index = userRequests.findIndex(r => r.id === requestId)
-  if (index !== -1) {
-    userRequests[index] = foundRequest
-    requestStore.set(foundUserId, userRequests)
-  }
-
-  // Notify user
-  addUserNotification(foundUserId, {
-    title: '✅ Account Request Approved',
-    message: `Your request to open a ${foundRequest.type} account has been approved! The account will be opened within 24 hours.`,
-    type: 'success'
   })
-
-  return { success: true }
+  
+  return foundRequest
 }
 
-// Reject request (admin)
-export const rejectRequest = (
-  requestId: string,
-  userId: string,
-  adminId: string,
-  adminName: string,
-  reason: string
-): { success: boolean; message?: string } => {
-  
-  // Find the request
-  let foundRequest: AccountRequest | undefined
+export async function updateAccountRequestStatus(
+  requestId: string, 
+  status: 'approved' | 'rejected'
+): Promise<AccountRequest | null> {
+  let updatedRequest: AccountRequest | null = null
   let foundUserId: string | undefined
 
-  for (const [uid, requests] of requestStore.entries()) {
+  // Use Array.from instead of direct iteration
+  Array.from(requestStore.entries()).forEach(([uid, requests]) => {
     const req = requests.find(r => r.id === requestId)
     if (req) {
-      foundRequest = req
-      foundUserId = uid
-      break
+      updatedRequest = { ...req, status, updatedAt: new Date() }
+      const index = requests.findIndex(r => r.id === requestId)
+      if (index !== -1) {
+        requestStore.get(uid)![index] = updatedRequest
+      }
     }
-  }
-
-  if (!foundRequest || !foundUserId) {
-    return { success: false, message: 'Request not found' }
-  }
-
-  // Update request status
-  foundRequest.status = 'rejected'
-  foundRequest.reviewedAt = new Date().toISOString()
-  foundRequest.reviewedBy = adminName
-  foundRequest.rejectionReason = reason
-
-  // Save back to store
-  const userRequests = requestStore.get(foundUserId) || []
-  const index = userRequests.findIndex(r => r.id === requestId)
-  if (index !== -1) {
-    userRequests[index] = foundRequest
-    requestStore.set(foundUserId, userRequests)
-  }
-
-  // Notify user
-  addUserNotification(foundUserId, {
-    title: '❌ Account Request Rejected',
-    message: `Your request to open a ${foundRequest.type} account was rejected. Reason: ${reason}`,
-    type: 'warning'
   })
 
-  return { success: true }
+  return updatedRequest
 }
 
-// Get request statistics (admin)
-export const getRequestStats = () => {
-  let pending = 0
-  let approved = 0
-  let rejected = 0
+export async function deleteAccountRequest(requestId: string): Promise<boolean> {
+  let deleted = false
+  let foundUserId: string | undefined
 
-  requestStore.forEach(requests => {
-    pending += requests.filter(r => r.status === 'pending').length
-    approved += requests.filter(r => r.status === 'approved').length
-    rejected += requests.filter(r => r.status === 'rejected').length
+  // Use Array.from instead of direct iteration
+  Array.from(requestStore.entries()).forEach(([uid, requests]) => {
+    const index = requests.findIndex(r => r.id === requestId)
+    if (index !== -1) {
+      requests.splice(index, 1)
+      deleted = true
+      if (requests.length === 0) {
+        requestStore.delete(uid)
+      }
+    }
   })
 
-  return { pending, approved, rejected }
+  return deleted
 }
