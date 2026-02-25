@@ -1,190 +1,82 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 
 interface OTPModalProps {
   isOpen: boolean
   onClose: () => void
   onVerify: (code: string) => Promise<boolean>
-  phoneNumber: string
-  purpose: string
+  email?: string  // Add email prop
 }
 
-export function OTPModal({ isOpen, onClose, onVerify, phoneNumber, purpose }: OTPModalProps) {
-  const [otp, setOtp] = useState(['', '', '', '', '', ''])
-  const [timer, setTimer] = useState(300)
-  const [isVerifying, setIsVerifying] = useState(false)
-  const [error, setError] = useState('')
-  const [canResend, setCanResend] = useState(false)
-  
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-
-  useEffect(() => {
-    if (!isOpen) return
-
-    inputRefs.current[0]?.focus()
-    
-    const interval = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          setCanResend(true)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [isOpen])
-
-  useEffect(() => {
-    if (!isOpen) {
-      setOtp(['', '', '', '', '', ''])
-      setTimer(300)
-      setError('')
-      setCanResend(false)
-    }
-  }, [isOpen])
-
-  const handleChange = (index: number, value: string) => {
-    if (value.length > 1) {
-      const pastedCode = value.slice(0, 6).split('')
-      const newOtp = [...otp]
-      pastedCode.forEach((char, i) => {
-        if (i < 6) newOtp[i] = char
-      })
-      setOtp(newOtp)
-      
-      const lastFilledIndex = Math.min(pastedCode.length, 5)
-      inputRefs.current[lastFilledIndex]?.focus()
-    } else {
-      if (/^\d*$/.test(value)) {
-        const newOtp = [...otp]
-        newOtp[index] = value
-        setOtp(newOtp)
-
-        if (value && index < 5) {
-          inputRefs.current[index + 1]?.focus()
-        }
-      }
-    }
-  }
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus()
-    }
-  }
-
-  const handleVerify = async () => {
-    const code = otp.join('')
-    if (code.length !== 6) {
-      setError('Please enter all 6 digits')
-      return
-    }
-
-    setIsVerifying(true)
-    setError('')
-
-    const isValid = await onVerify(code)
-    
-    if (isValid) {
-      onClose()
-    } else {
-      setError('Invalid OTP code')
-      setOtp(['', '', '', '', '', ''])
-      inputRefs.current[0]?.focus()
-    }
-    
-    setIsVerifying(false)
-  }
-
-  const handleResend = async () => {
-    setTimer(300)
-    setCanResend(false)
-    setOtp(['', '', '', '', '', ''])
-    setError('')
-    await onVerify('RESEND')
-  }
+export function OTPModal({ isOpen, onClose, onVerify, email }: OTPModalProps) {
+  const [otpCode, setOtpCode] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   if (!isOpen) return null
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (otpCode.length !== 6) return
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const isValid = await onVerify(otpCode)
+      if (!isValid) {
+        setError('Invalid verification code')
+      }
+    } catch (err) {
+      setError('Verification failed. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Verification Required</h2>
-          <p className="text-gray-600">
-            Enter the 6-digit code sent to <span className="font-semibold">{phoneNumber}</span>
-          </p>
-        </div>
-
-        <div className="flex justify-center space-x-3 mb-6">
-          {otp.map((digit, index) => (
-            <input
-              key={index}
-              ref={(el) => { inputRefs.current[index] = el }}
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              value={digit}
-              onChange={(e) => handleChange(index, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(index, e)}
-              className={`w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] ${
-                error ? 'border-red-500 bg-red-50' : 'border-gray-300'
-              }`}
-              disabled={isVerifying}
-            />
-          ))}
-        </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600 text-center">{error}</p>
-          </div>
-        )}
-
-        <div className="text-center mb-6">
-          {timer > 0 ? (
-            <p className="text-sm text-gray-500">
-              Code expires in <span className="font-semibold text-[#1e3a5f]">{formatTime(timer)}</span>
-            </p>
-          ) : (
-            <p className="text-sm text-red-500">Code expired</p>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <h3 className="text-xl font-bold text-deep-teal mb-2">Verify Your Identity</h3>
+        <p className="text-gray-600 mb-4">
+          Enter the 6-digit verification code sent to {email || 'your email'}.
+        </p>
+        
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={otpCode}
+            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="000000"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent mb-4 text-center text-2xl tracking-widest"
+            maxLength={6}
+            disabled={isLoading}
+            autoFocus
+          />
+          
+          {error && (
+            <p className="text-red-500 text-sm mb-4">{error}</p>
           )}
-        </div>
-
-        <div className="space-y-3">
-          <button
-            onClick={handleVerify}
-            disabled={isVerifying || otp.join('').length !== 6}
-            className="w-full bg-[#1e3a5f] text-white py-3 px-4 rounded-xl font-semibold hover:bg-[#2b4c7a] disabled:opacity-50"
-          >
-            {isVerifying ? 'Verifying...' : 'Verify & Continue'}
-          </button>
-
-          <button
-            onClick={handleResend}
-            disabled={!canResend}
-            className="w-full text-[#1e3a5f] font-semibold py-2 hover:text-[#2b4c7a] disabled:opacity-50"
-          >
-            Resend Code
-          </button>
-
-          <button
-            onClick={onClose}
-            className="w-full text-gray-500 py-2 hover:text-gray-700"
-          >
-            Cancel
-          </button>
-        </div>
+          
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={isLoading || otpCode.length !== 6}
+              className="flex-1 bg-deep-teal text-white py-3 rounded-lg hover:bg-soft-gold transition-colors disabled:opacity-50"
+            >
+              {isLoading ? 'Verifying...' : 'Verify'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
