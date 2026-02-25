@@ -1,21 +1,33 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend';
 
-// Initialize Resend with your API key
+// Initialize Resend with your API key from environment variables
 const resend = new Resend(process.env.RESEND_API_KEY || '');
 
 export async function POST(request: Request) {
   try {
     const { email, otp, name } = await request.json()
     
+    // Validate email
+    if (!email || !email.includes('@')) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid email address' },
+        { status: 400 }
+      );
+    }
+    
     // For development - log to console
     if (process.env.NODE_ENV === 'development') {
-      console.log('📧 [DEV] OTP:', otp, 'for:', email)
-      return NextResponse.json({ success: true, messageId: 'dev-mode' })
+      console.log('📧 [DEV] OTP:', otp, 'for:', email, 'Name:', name)
+      return NextResponse.json({ 
+        success: true, 
+        messageId: 'dev-mode',
+        message: 'OTP sent successfully (dev mode)' 
+      })
     }
 
     // Send email using Resend
-    const data = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: 'Oldspring Trust <onboarding@resend.dev>',
       to: email,
       subject: 'Your Oldspring Trust Verification Code',
@@ -61,9 +73,19 @@ export async function POST(request: Request) {
       `
     });
 
+    // Check for errors
+    if (error) {
+      console.error('Resend error:', error);
+      return NextResponse.json(
+        { success: false, error: error.message || 'Failed to send email' },
+        { status: 500 }
+      );
+    }
+
+    // Success response - Resend returns data with id
     return NextResponse.json({ 
       success: true, 
-      messageId: data.id,
+      messageId: data?.id || 'unknown',
       message: 'OTP sent successfully' 
     });
 
