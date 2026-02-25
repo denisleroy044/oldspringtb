@@ -92,11 +92,13 @@ export default function AccountDetailPage() {
     }
   }
 
-  const handleOtpVerify = async () => {
-    if (!otpRequestId || !pendingTransfer || !authUser) return
+  const handleOtpVerify = async (code: string): Promise<boolean> => {
+    if (!otpRequestId || !pendingTransfer || !authUser) {
+      return false
+    }
 
     try {
-      const isValid = await verifyOTP(otpRequestId, otpCode)
+      const isValid = await verifyOTP(otpRequestId, code)
       if (isValid) {
         const result = await transferBetweenAccounts(
           pendingTransfer.fromAccountId,
@@ -121,18 +123,21 @@ export default function AccountDetailPage() {
           setTransferAmount('')
           setSelectedToAccount('')
           setTransferDescription('')
+          setShowOtpModal(false)
+          setOtpCode('')
+          setPendingTransfer(null)
+          return true
         } else {
           setMessage({ type: 'error', text: result.error || 'Transfer failed' })
+          return false
         }
       } else {
         setMessage({ type: 'error', text: 'Invalid OTP code' })
+        return false
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Verification failed' })
-    } finally {
-      setShowOtpModal(false)
-      setOtpCode('')
-      setPendingTransfer(null)
+      return false
     }
   }
 
@@ -402,9 +407,9 @@ export default function AccountDetailPage() {
       )}
 
       {/* OTP Modal */}
-      {showOtpModal && (
+      {showOtpModal && otpRequestId && (
         <OTPModal
-          requestId={otpRequestId || ''}
+          requestId={otpRequestId}
           onVerify={handleOtpVerify}
           onClose={() => {
             setShowOtpModal(false)
