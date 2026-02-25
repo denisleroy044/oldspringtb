@@ -61,11 +61,9 @@ function AccountContent() {
   useEffect(() => {
     const handleSidebarChange = (e: CustomEvent) => {
       setSidebarCollapsed(e.detail.collapsed)
-    }
 
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024)
-    }
 
     window.addEventListener('sidebarChange' as any, handleSidebarChange)
     checkMobile()
@@ -78,18 +76,15 @@ function AccountContent() {
         lastName: user.lastName || '',
         email: user.email || '',
         phone: user.phone || ''
-      })
-    }
 
     return () => {
       window.removeEventListener('sidebarChange' as any, handleSidebarChange)
       window.removeEventListener('resize', checkMobile)
-    }
+
   }, [user])
 
   if (!authUser) {
     return null
-  }
 
   if (!user) {
     return (
@@ -97,7 +92,6 @@ function AccountContent() {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1e3a5f]"></div>
       </div>
     )
-  }
 
   const tabs = [
     { id: 'profile', name: 'Profile', icon: '👤' },
@@ -110,17 +104,14 @@ function AccountContent() {
     if (response.success && response.requestId) {
       setOtpRequestId(response.requestId)
       setShowOTP(true)
-    }
-  }
+
 
   const handleOTPVerify = async (code: string): Promise<boolean> => {
     if (code === 'RESEND') {
       const response = await requestOTP(user?.phone || '1234567890', 'account update')
       if (response.requestId) {
         setOtpRequestId(response.requestId)
-      }
       return true
-    }
 
     const isValid = await verifyOTP(otpRequestId, code)
     
@@ -128,16 +119,12 @@ function AccountContent() {
       // If we were changing password, save it
       if (showChangePassword) {
         handlePasswordChange()
-      }
       if (isEditing) {
         handleSaveProfile()
-      }
       setShowChangePassword(false)
       setIsEditing(false)
-    }
-    
+
     return isValid
-  }
 
   const handleSaveProfile = () => {
     if (!user) return
@@ -147,15 +134,14 @@ function AccountContent() {
       email: editForm.email,
     })
     
-    if (updated) {
+    // Profile updated successfully
+    addUserNotification(user.id, {
       addUserNotification(user.id, {
         title: '✅ Profile Updated',
         message: 'Your profile information has been successfully updated.',
         type: 'success'
-      })
       refreshUser()
-    }
-  }
+
 
   const handlePasswordChange = () => {
     if (!user) return
@@ -164,13 +150,11 @@ function AccountContent() {
     if (passwordData.new !== passwordData.confirm) {
       setPasswordError('New passwords do not match')
       return
-    }
-    
+
     if (passwordData.new.length < 6) {
       setPasswordError('Password must be at least 6 characters')
       return
-    }
-    
+
     const result = changePassword(user.id, passwordData.current, passwordData.new)
     
     if (result.success) {
@@ -182,14 +166,12 @@ function AccountContent() {
         title: '🔐 Password Changed',
         message: 'Your password has been successfully updated.',
         type: 'success'
-      })
       
       // Clear success message after 3 seconds
       setTimeout(() => setPasswordSuccess(''), 3000)
     } else {
       setPasswordError(result.message)
-    }
-  }
+
 
   const handleToggle2FA = () => {
     if (!user) return
@@ -199,8 +181,7 @@ function AccountContent() {
     
     if (result.success) {
       setTwoFAEnabled(newState)
-    }
-  }
+
 
   const handleTogglePreference = (key: keyof typeof preferences) => {
     if (!user) return
@@ -208,7 +189,7 @@ function AccountContent() {
     const newPrefs = {
       ...preferences,
       [key]: !preferences[key]
-    }
+
     setPreferences(newPrefs)
     
     updateNotificationPreferences(user.id, newPrefs)
@@ -218,7 +199,6 @@ function AccountContent() {
       message: `Notification preferences have been updated.`,
       type: 'info'
     })
-  }
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -235,19 +215,16 @@ function AccountContent() {
         title: '🖼️ Avatar Updated',
         message: 'Your profile picture has been changed.',
         type: 'success'
-      })
       
       refreshUser()
-    }
+
     reader.readAsDataURL(file)
-  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <Sidebar />
       <div className={`flex-1 transition-all duration-300 flex flex-col ${
         !isMobile && (sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64')
-      }`}>
         <Header />
         <main className="flex-1 pt-20 lg:pt-24 px-4 lg:px-6 pb-6">
           {/* Page Header */}
@@ -299,7 +276,7 @@ function AccountContent() {
                       email: user.email || '',
                       phone: user.phone || ''
                     })
-                  }
+
                 }}
                 className="px-4 lg:px-6 py-2 text-sm lg:text-base border-2 border-[#1e3a5f] text-[#1e3a5f] rounded-lg lg:rounded-xl font-semibold hover:bg-[#1e3a5f] hover:text-white transition"
               >
@@ -599,7 +576,6 @@ function AccountContent() {
       />
     </div>
   )
-}
 
 export default function AccountPage() {
   return (
@@ -607,4 +583,3 @@ export default function AccountPage() {
       <AccountContent />
     </DashboardProvider>
   )
-}
