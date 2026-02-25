@@ -1,6 +1,6 @@
 import { sendEmail, generateOTPEmail } from './emailService';
 
-// Mock OTP storage (in production, use Redis or database)
+// In production, use Redis or database
 const otpStore: Map<string, { code: string; expires: Date; attempts: number }> = new Map();
 
 // Generate a random 6-digit OTP
@@ -12,7 +12,7 @@ export const generateOTP = (): string => {
 export const requestOTP = async (
   identifier: string,
   purpose: string
-): Promise<{ success: boolean; requestId?: string; message?: string }> => {
+): Promise<{ success: boolean; requestId?: string; message?: string; error?: string }> => {
   try {
     // Generate OTP
     const otp = generateOTP();
@@ -25,16 +25,28 @@ export const requestOTP = async (
       attempts: 0
     });
 
-    // For email identifiers
+    // Send via email
     if (identifier.includes('@')) {
-      const emailContent = generateOTPEmail(otp);
+      const emailContent = generateOTPEmail(otp, purpose === '2fa' ? 'User' : undefined);
       emailContent.to = identifier;
-      await sendEmail(emailContent);
-    }
-    // For phone numbers (SMS) - implement SMS service here
-    else {
+      
+      const result = await sendEmail(emailContent);
+      
+      if (!result.success) {
+        otpStore.delete(requestId);
+        return { 
+          success: false, 
+          error: result.error || 'Failed to send email'
+        };
+      }
+      
+      console.log(`✅ OTP sent to ${identifier} for ${purpose}`);
+    } 
+    // Send via SMS (if you have Twilio set up)
+    else if (identifier.match(/^\+?[1-9]\d{1,14}$/)) {
+      // Implement SMS sending here with Twilio
       console.log(`📱 SMS would be sent to ${identifier} with code: ${otp}`);
-      // Integrate with SMS service like Twilio here
+      // await sendSMS(identifier, `Your Oldspring Trust verification code is: ${otp}`);
     }
 
     return {
@@ -46,7 +58,7 @@ export const requestOTP = async (
     console.error('Error sending OTP:', error);
     return {
       success: false,
-      message: 'Failed to send OTP'
+      error: 'Failed to send OTP'
     };
   }
 };
@@ -90,7 +102,7 @@ export const verifyOTP = async (
 export const resendOTP = async (
   requestId: string,
   identifier: string
-): Promise<{ success: boolean; newRequestId?: string; message?: string }> => {
+): Promise<{ success: boolean; newRequestId?: string; error?: string }> => {
   // Delete old OTP
   otpStore.delete(requestId);
   
