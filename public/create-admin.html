@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Admin User</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1e3a5f;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #1e3a5f;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #2b4c7a;
+        }
+        .success {
+            color: green;
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+            margin-top: 20px;
+        }
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Create Admin User</h1>
+        <p>Click the button below to create the admin user.</p>
+        
+        <button onclick="createAdmin()">Create Admin User</button>
+        
+        <div id="result"></div>
+        
+        <div class="note">
+            <strong>📝 Note:</strong> After clicking the button, you can login with:
+            <br><br>
+            <strong>Email:</strong> admin@oldspring.com
+            <br>
+            <strong>Password:</strong> admin123
+        </div>
+    </div>
+
+    <script>
+        function createAdmin() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                const existingUsers = localStorage.getItem('bank_users');
+                let users = existingUsers ? JSON.parse(existingUsers) : [];
+                
+                const adminExists = users.some(u => u.isAdmin === true);
+                
+                if (adminExists) {
+                    resultDiv.innerHTML = '<div class="success">✅ Admin user already exists! You can login now.</div>';
+                    return;
+                }
+                
+                const adminUser = {
+                    id: 'admin_' + Date.now(),
+                    firstName: 'Admin',
+                    lastName: 'User',
+                    email: 'admin@oldspring.com',
+                    phone: '+1 (555) 000-0000',
+                    password: 'admin123',
+                    accountNumber: 'ADMIN001',
+                    accountName: 'System Administrator',
+                    accountStatus: 'active',
+                    accountType: 'business',
+                    balance: 0,
+                    avatar: '/assets/img/avatars/admin-avatar.png',
+                    createdAt: new Date().toISOString(),
+                    lastLogin: new Date().toISOString(),
+                    isAdmin: true,
+                    notifications: []
+                };
+                
+                users.push(adminUser);
+                localStorage.setItem('bank_users', JSON.stringify(users));
+                
+                resultDiv.innerHTML = '<div class="success">✅ Admin user created successfully!<br><br>📧 Email: admin@oldspring.com<br>🔑 Password: admin123</div>';
+                
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">❌ Error: ' + error.message + '</div>';
+            }
+        }
+    </script>
+</body>
+</html>
