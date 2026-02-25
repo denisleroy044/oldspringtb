@@ -1,267 +1,394 @@
 'use client'
 
-import { DashboardProvider, useDashboardContext } from '@/context/DashboardContext'
-import { Header } from '@/components/dashboard/Header'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/context/AuthContext'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { DashboardFooter } from '@/components/dashboard/Footer'
 import { OTPModal } from '@/components/dashboard/otp/OTPModal'
-import { requestOTP, verifyOTP } from '@/lib/otp/otpUtils'
-import { useState, useEffect } from 'react'
-import { useAuth } from '@/context/AuthContext'
+import { requestOTP, verifyOTP } from '@/lib/otp/otpService'
+import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
 
-function DepositContent() {
-  const { user, updateUserBalance } = useDashboardContext()
-  const { user: authUser } = useAuth()
+interface DepositMethod {
+  id: string
+  type: 'bank' | 'card' | 'cash' | 'wire'
+  name: string
+  icon: string
+  processingTime: string
+  fee: string
+  minAmount: number
+  maxAmount: number
+}
+
+interface BankAccount {
+  id: string
+  name: string
+  accountNumber: string
+  routingNumber: string
+  isVerified: boolean
+}
+
+export default function DepositPage() {
+  const router = useRouter()
+  const { user } = useAuth()
+  const [selectedMethod, setSelectedMethod] = useState<string>('bank')
   const [amount, setAmount] = useState('')
-  const [selectedMethod, setSelectedMethod] = useState('bank')
-  const [showOTP, setShowOTP] = useState(false)
-  const [otpRequestId, setOtpRequestId] = useState('')
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [selectedBankAccount, setSelectedBankAccount] = useState<string>('')
+  const [cardNumber, setCardNumber] = useState('')
+  const [cardExpiry, setCardExpiry] = useState('')
+  const [cardCvv, setCardCvv] = useState('')
+  const [showOtpModal, setShowOtpModal] = useState(false)
+  const [otpRequestId, setOtpRequestId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-  useEffect(() => {
-    const handleSidebarChange = (e: CustomEvent) => {
-      setSidebarCollapsed(e.detail.collapsed)
+  // Mock bank accounts
+  const bankAccounts: BankAccount[] = [
+    {
+      id: '1',
+      name: 'Chase Checking',
+      accountNumber: '****5678',
+      routingNumber: '021000021',
+      isVerified: true
+    },
+    {
+      id: '2',
+      name: 'Wells Fargo Savings',
+      accountNumber: '****1234',
+      routingNumber: '121000248',
+      isVerified: true
     }
-
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024)
-    }
-
-    window.addEventListener('sidebarChange' as any, handleSidebarChange)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-
-    return () => {
-      window.removeEventListener('sidebarChange' as any, handleSidebarChange)
-      window.removeEventListener('resize', checkMobile)
-    }
-  }, [])
-
-  if (!authUser) {
-    return null
-  }
-
-  const depositMethods = [
-    { id: 'bank', name: 'Bank Transfer', icon: '🏦', description: 'From your external bank account' },
-    { id: 'card', name: 'Debit/Credit Card', icon: '💳', description: 'Instant deposit with card' },
-    { id: 'wire', name: 'Wire Transfer', icon: '🌐', description: 'International wire transfer' },
   ]
 
-  const handleDeposit = async () => {
-    if (!amount || parseFloat(amount) <= 0) return
-
-    setIsProcessing(true)
-    
-    const response = await requestOTP(user?.phone || '1234567890', 'deposit')
-    if (response.success && response.requestId) {
-      setOtpRequestId(response.requestId)
-      setShowOTP(true)
+  const depositMethods: DepositMethod[] = [
+    {
+      id: 'bank',
+      type: 'bank',
+      name: 'Bank Transfer',
+      icon: '🏦',
+      processingTime: '1-2 business days',
+      fee: 'Free',
+      minAmount: 10,
+      maxAmount: 50000
+    },
+    {
+      id: 'card',
+      type: 'card',
+      name: 'Debit/Credit Card',
+      icon: '💳',
+      processingTime: 'Instant',
+      fee: '2.5%',
+      minAmount: 5,
+      maxAmount: 5000
+    },
+    {
+      id: 'wire',
+      type: 'wire',
+      name: 'Wire Transfer',
+      icon: '⚡',
+      processingTime: 'Same day',
+      fee: '$25',
+      minAmount: 1000,
+      maxAmount: 100000
     }
-    
-    setIsProcessing(false)
-  }
+  ]
 
-  const handleOTPVerify = async (code: string): Promise<boolean> => {
-    if (code === 'RESEND') {
-      const response = await requestOTP(user?.phone || '1234567890', 'deposit')
+  const selectedMethodData = depositMethods.find(m => m.id === selectedMethod)
+
+  const handleDeposit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    const depositAmount = parseFloat(amount)
+    if (isNaN(depositAmount) || depositAmount <= 0) {
+      setMessage({ type: 'error', text: 'Please enter a valid amount' })
+      return
+    }
+
+    if (selectedMethodData && (depositAmount < selectedMethodData.minAmount || depositAmount > selectedMethodData.maxAmount)) {
+      setMessage({ 
+        type: 'error', 
+        text: `Amount must be between $${selectedMethodData.minAmount} and $${selectedMethodData.maxAmount}` 
+      })
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      // For bank transfers, we might need OTP for verification
+      if (selectedMethod === 'bank' && !selectedBankAccount) {
+        setMessage({ type: 'error', text: 'Please select a bank account' })
+        setIsLoading(false)
+        return
+      }
+
+      // Request OTP for verification
+      const response = await requestOTP(user?.email || '', 'deposit', user?.name)
       if (response.requestId) {
         setOtpRequestId(response.requestId)
+        setShowOtpModal(true)
       }
-      return true
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to process deposit request' })
+    } finally {
+      setIsLoading(false)
     }
-
-    const isValid = await verifyOTP(otpRequestId, code)
-    
-    if (isValid) {
-      const depositAmount = parseFloat(amount)
-      const newBalance = (user?.balance || 0) + depositAmount
-      updateUserBalance(newBalance)
-      setSuccess(true)
-      
-      setTimeout(() => {
-        setSuccess(false)
-        setAmount('')
-      }, 3000)
-    }
-    
-    return isValid
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1e3a5f]"></div>
-      </div>
-    )
+  const handleOtpVerify = async (code: string): Promise<boolean> => {
+    if (!otpRequestId || !user) return false
+
+    try {
+      const isValid = await verifyOTP(otpRequestId, code)
+      if (isValid) {
+        // Process the deposit
+        setMessage({ 
+          type: 'success', 
+          text: `Successfully deposited $${amount}. It will be available in your account ${selectedMethodData?.processingTime.toLowerCase()}.` 
+        })
+        
+        // Reset form
+        setAmount('')
+        setSelectedBankAccount('')
+        setCardNumber('')
+        setCardExpiry('')
+        setCardCvv('')
+        setShowOtpModal(false)
+        setOtpRequestId(null)
+        return true
+      } else {
+        setMessage({ type: 'error', text: 'Invalid verification code' })
+        return false
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Verification failed' })
+      return false
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount)
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
-      <div className={`flex-1 transition-all duration-300 flex flex-col ${
-        !isMobile && (sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64')
-      }`}>
-        <Header />
-        <main className="flex-1 pt-20 lg:pt-24 px-4 lg:px-6 pb-6">
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl lg:text-3xl font-bold text-[#1e3a5f]">Deposit Funds</h1>
-            <p className="text-sm lg:text-base text-gray-600 mt-1">Add money to your account securely</p>
-          </div>
+      <div className="flex-1 flex flex-col">
+        <main className="flex-1 p-4 md:p-8">
+          <ScrollAnimation animation="fadeIn">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-deep-teal mb-2">Deposit Funds</h1>
+              <p className="text-gray-600">Add money to your account securely</p>
+            </div>
 
-          {/* Success Message */}
-          {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl animate-slide-in">
-              <div className="flex items-center">
-                <div className="w-8 h-8 lg:w-10 lg:h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <svg className="w-4 h-4 lg:w-6 lg:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+            {message && (
+              <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                {message.text}
+              </div>
+            )}
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* Deposit Methods */}
+              <div className="md:col-span-1">
+                <h2 className="text-lg font-semibold text-deep-teal mb-4">Deposit Methods</h2>
+                <div className="space-y-3">
+                  {depositMethods.map((method) => (
+                    <button
+                      key={method.id}
+                      onClick={() => setSelectedMethod(method.id)}
+                      className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                        selectedMethod === method.id
+                          ? 'border-soft-gold bg-soft-gold/5'
+                          : 'border-gray-200 hover:border-soft-gold hover:bg-soft-gold/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{method.icon}</span>
+                        <div>
+                          <p className="font-medium text-gray-900">{method.name}</p>
+                          <p className="text-xs text-gray-500">{method.processingTime} • {method.fee}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                <div>
-                  <p className="text-sm lg:text-base font-semibold text-green-800">Deposit Successful!</p>
-                  <p className="text-xs lg:text-sm text-green-600">${amount} has been added to your account</p>
+              </div>
+
+              {/* Deposit Form */}
+              <div className="md:col-span-2">
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h2 className="text-lg font-semibold text-deep-teal mb-4">
+                    Deposit via {selectedMethodData?.name}
+                  </h2>
+
+                  <form onSubmit={handleDeposit} className="space-y-6">
+                    {/* Amount */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Amount
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                        <input
+                          type="number"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          placeholder="0.00"
+                          step="0.01"
+                          min={selectedMethodData?.minAmount}
+                          max={selectedMethodData?.maxAmount}
+                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                          required
+                        />
+                      </div>
+                      {selectedMethodData && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Min: {formatCurrency(selectedMethodData.minAmount)} • Max: {formatCurrency(selectedMethodData.maxAmount)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Bank Account Selection (for bank transfer) */}
+                    {selectedMethod === 'bank' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Select Bank Account
+                        </label>
+                        <select
+                          value={selectedBankAccount}
+                          onChange={(e) => setSelectedBankAccount(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                          required
+                        >
+                          <option value="">Choose an account</option>
+                          {bankAccounts.map((account) => (
+                            <option key={account.id} value={account.id}>
+                              {account.name} • {account.accountNumber}
+                            </option>
+                          ))}
+                        </select>
+                        <button className="text-sm text-soft-gold hover:text-deep-teal mt-2 transition-colors">
+                          + Add new bank account
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Card Details (for card deposits) */}
+                    {selectedMethod === 'card' && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Card Number
+                          </label>
+                          <input
+                            type="text"
+                            value={cardNumber}
+                            onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, '').slice(0, 16))}
+                            placeholder="1234 5678 9012 3456"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                            required
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Expiry Date
+                            </label>
+                            <input
+                              type="text"
+                              value={cardExpiry}
+                              onChange={(e) => {
+                                let value = e.target.value.replace(/\D/g, '')
+                                if (value.length >= 2) {
+                                  value = value.slice(0, 2) + '/' + value.slice(2, 4)
+                                }
+                                setCardExpiry(value)
+                              }}
+                              placeholder="MM/YY"
+                              maxLength={5}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              CVV
+                            </label>
+                            <input
+                              type="password"
+                              value={cardCvv}
+                              onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                              placeholder="123"
+                              maxLength={3}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                              required
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Wire Transfer Instructions */}
+                    {selectedMethod === 'wire' && (
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <h3 className="font-medium text-blue-800 mb-2">Wire Transfer Instructions</h3>
+                        <p className="text-sm text-blue-700 mb-2">
+                          Please use the following details for wire transfer:
+                        </p>
+                        <ul className="text-sm text-blue-700 space-y-1">
+                          <li><strong>Bank:</strong> Oldspring Trust</li>
+                          <li><strong>Account Name:</strong> {user?.name}</li>
+                          <li><strong>Account Number:</strong> 123456789</li>
+                          <li><strong>Routing Number:</strong> 655205039</li>
+                          <li><strong>SWIFT/BIC:</strong> OLDSPR22</li>
+                        </ul>
+                        <p className="text-xs text-blue-600 mt-2">
+                          Funds will be credited within 24 hours after we receive the wire.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Fee Disclosure */}
+                    {selectedMethodData && selectedMethodData.fee !== 'Free' && (
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm text-gray-600">
+                          A fee of {selectedMethodData.fee} will apply to this transaction.
+                          {amount && ` Estimated fee: ${formatCurrency(parseFloat(amount || '0') * 0.025)}`}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full bg-gradient-to-r from-deep-teal to-sage text-white py-4 rounded-xl font-semibold hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50"
+                    >
+                      {isLoading ? 'Processing...' : 'Continue to Deposit'}
+                    </button>
+                  </form>
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-            {/* Deposit Form */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-xl lg:rounded-2xl shadow-lg p-4 lg:p-6">
-                {/* Current Balance */}
-                <div className="mb-4 lg:mb-6 p-3 lg:p-4 bg-gradient-to-r from-[#1e3a5f] to-[#2b4c7a] rounded-lg lg:rounded-xl text-white">
-                  <p className="text-xs lg:text-sm opacity-90">Current Balance</p>
-                  <p className="text-xl lg:text-2xl font-bold">${user?.balance.toLocaleString()}</p>
-                </div>
-
-                {/* Deposit Methods */}
-                <div className="mb-4 lg:mb-6">
-                  <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-2 lg:mb-3">
-                    Select Deposit Method
-                  </label>
-                  <div className="grid grid-cols-3 gap-2 lg:gap-3">
-                    {depositMethods.map((method) => (
-                      <button
-                        key={method.id}
-                        onClick={() => setSelectedMethod(method.id)}
-                        className={`p-2 lg:p-3 border-2 rounded-lg lg:rounded-xl text-center transition ${
-                          selectedMethod === method.id
-                            ? 'border-[#1e3a5f] bg-[#1e3a5f] bg-opacity-5'
-                            : 'border-gray-200 hover:border-[#1e3a5f] hover:bg-gray-50'
-                        }`}
-                      >
-                        <span className="text-xl lg:text-2xl mb-1 block">{method.icon}</span>
-                        <p className="text-xs font-medium hidden lg:block">{method.name}</p>
-                        <p className="text-xs font-medium lg:hidden">{method.name.split(' ')[0]}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Amount Input */}
-                <div className="mb-4 lg:mb-6">
-                  <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">
-                    Deposit Amount
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 lg:left-4 top-2 lg:top-3 text-lg lg:text-2xl text-gray-500">$</span>
-                    <input
-                      type="number"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="0.00"
-                      min="1"
-                      step="0.01"
-                      className="w-full pl-8 lg:pl-12 pr-3 lg:pr-4 py-2 lg:py-3 text-lg lg:text-2xl border-2 border-gray-200 rounded-lg lg:rounded-xl focus:outline-none focus:border-[#1e3a5f] transition"
-                    />
-                  </div>
-                </div>
-
-                {/* Quick Amounts */}
-                <div className="mb-4 lg:mb-6">
-                  <p className="text-xs text-gray-600 mb-2">Quick amounts</p>
-                  <div className="flex flex-wrap gap-2">
-                    {[100, 500, 1000, 5000].map((quickAmount) => (
-                      <button
-                        key={quickAmount}
-                        onClick={() => setAmount(quickAmount.toString())}
-                        className="px-3 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm border-2 border-gray-200 rounded-lg hover:border-[#1e3a5f] hover:bg-gray-50 transition"
-                      >
-                        ${quickAmount}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Deposit Button */}
-                <button
-                  onClick={handleDeposit}
-                  disabled={!amount || parseFloat(amount) <= 0 || isProcessing}
-                  className="w-full bg-[#1e3a5f] text-white py-3 lg:py-4 px-4 lg:px-6 rounded-lg lg:rounded-xl text-sm lg:text-base font-semibold hover:bg-[#2b4c7a] transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isProcessing ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 lg:h-5 lg:w-5 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Processing...
-                    </span>
-                  ) : (
-                    'Continue to Deposit'
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Info Panel */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl lg:rounded-2xl shadow-lg p-4 lg:p-6">
-                <h3 className="text-sm lg:text-base font-semibold text-gray-900 mb-3 lg:mb-4">Deposit Information</h3>
-                
-                <div className="space-y-3 lg:space-y-4">
-                  <div className="p-2 lg:p-3 bg-blue-50 rounded-lg">
-                    <p className="text-xs lg:text-sm font-medium text-blue-800 mb-1">Processing Time</p>
-                    <p className="text-xs text-blue-600">Bank transfer: 1-2 business days</p>
-                    <p className="text-xs text-blue-600">Card: Instant</p>
-                    <p className="text-xs text-blue-600">Wire: 2-3 business days</p>
-                  </div>
-
-                  <div className="p-2 lg:p-3 bg-green-50 rounded-lg">
-                    <p className="text-xs lg:text-sm font-medium text-green-800 mb-1">Limits</p>
-                    <p className="text-xs text-green-600">Minimum: $1.00</p>
-                    <p className="text-xs text-green-600">Maximum: $50,000 per day</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          </ScrollAnimation>
         </main>
         <DashboardFooter />
       </div>
 
-      {/* OTP Modal */}
+      {/* OTP Modal - Using standardized props */}
       <OTPModal
-        isOpen={showOTP}
-        onClose={() => setShowOTP(false)}
-        onVerify={handleOTPVerify}
-        phoneNumber={user?.phone || '****'}
-        purpose="deposit verification"
+        isOpen={showOtpModal}
+        onClose={() => {
+          setShowOtpModal(false)
+          setOtpRequestId(null)
+        }}
+        onVerify={handleOtpVerify}
+        email={user?.email}
       />
     </div>
-  )
-}
-
-export default function DepositPage() {
-  return (
-    <DashboardProvider>
-      <DepositContent />
-    </DashboardProvider>
   )
 }
