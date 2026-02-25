@@ -1,20 +1,17 @@
 import type { Metadata } from 'next'
-import { Poppins } from 'next/font/google'
-import { AuthProvider } from '@/context/AuthContext'
-import { ScrollToTop } from '@/components/ui/ScrollToTop'
+import { Inter } from 'next/font/google'
 import './globals.css'
 
-// Properly configure Poppins with all weights
-const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
-  variable: '--font-poppins',
-  display: 'swap',
-})
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Oldspring Trust Bank - Mobile Banking, Credit Cards, Mortgages',
-  description: 'Mobile Banking, Credit Cards, Mortgages, Auto Loan',
+  title: 'Oldspring Trust',
+  description: 'Building lasting relationships based on trust since 1945',
+  icons: {
+    icon: '/images/logo/favicon.png',
+    shortcut: '/images/logo/favicon.png',
+    apple: '/images/logo/favicon.png',
+  },
 }
 
 export default function RootLayout({
@@ -23,13 +20,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${poppins.variable} scroll-smooth`}>
-      <body className="font-poppins antialiased bg-cream">
-        <AuthProvider>
-          {children}
-          <ScrollToTop />
-        </AuthProvider>
-      </body>
+    <html lang="en">
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }
