@@ -55,7 +55,6 @@ function AccountContent() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-  // Initialize form with user data
   useEffect(() => {
     if (user) {
       const nameParts = user.name?.split(' ') || ['', '']
@@ -289,7 +288,6 @@ function AccountContent() {
           </div>
         )}
 
-        {/* Tabs */}
         <div className="flex border-b border-gray-200 mb-8 overflow-x-auto">
           {[
             { id: 'profile', label: 'Profile', icon: '👤' },
@@ -427,7 +425,6 @@ function AccountContent() {
         {activeTab === 'security' && (
           <ScrollAnimation animation="fadeIn">
             <div className="space-y-6">
-              {/* Change Password */}
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h2 className="text-xl font-semibold text-deep-teal mb-4">Change Password</h2>
                 <form onSubmit={handlePasswordSubmit} className="space-y-4">
@@ -476,7 +473,6 @@ function AccountContent() {
                 </form>
               </div>
 
-              {/* Two-Factor Authentication */}
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -597,7 +593,6 @@ function AccountContent() {
               <h2 className="text-xl font-semibold text-deep-teal mb-4">Appearance</h2>
               
               <div className="space-y-6">
-                {/* Avatar Upload */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">Profile Picture</label>
                   <div className="flex items-center gap-6">
@@ -637,7 +632,7 @@ function AccountContent() {
           </ScrollAnimation>
         )}
 
-        {/* OTP Modal */}
+        {/* OTP Modal - Using new props */}
         <OTPModal
           isOpen={showOtpModal}
           onClose={() => {

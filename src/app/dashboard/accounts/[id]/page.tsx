@@ -7,7 +7,7 @@ import { Sidebar } from '@/components/dashboard/Sidebar'
 import { DashboardFooter } from '@/components/dashboard/Footer'
 import { getUserAccounts, getAccountTransactions, transferBetweenAccounts, BankAccount, AccountTransaction } from '@/lib/accounts/accountService'
 import { OTPModal } from '@/components/dashboard/otp/OTPModal'
-import { requestOTP, verifyOTP } from '@/lib/otp/otpUtils'
+import { requestOTP, verifyOTP } from '@/lib/otp/otpService'
 import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
 
 export default function AccountDetailPage() {
@@ -24,7 +24,6 @@ export default function AccountDetailPage() {
   const [transferDescription, setTransferDescription] = useState('')
   const [showOtpModal, setShowOtpModal] = useState(false)
   const [otpRequestId, setOtpRequestId] = useState<string | null>(null)
-  const [otpCode, setOtpCode] = useState('')
   const [pendingTransfer, setPendingTransfer] = useState<{
     fromAccountId: string
     toAccountId: string
@@ -76,7 +75,7 @@ export default function AccountDetailPage() {
     }
 
     try {
-      const response = await requestOTP(authUser?.email || '', 'transfer')
+      const response = await requestOTP(authUser?.email || '', 'transfer', authUser?.name)
       if (response.requestId) {
         setOtpRequestId(response.requestId)
         setPendingTransfer({
@@ -124,7 +123,7 @@ export default function AccountDetailPage() {
           setSelectedToAccount('')
           setTransferDescription('')
           setShowOtpModal(false)
-          setOtpCode('')
+          setOtpRequestId(null)
           setPendingTransfer(null)
           return true
         } else {
@@ -196,7 +195,6 @@ export default function AccountDetailPage() {
       <div className="flex-1 flex flex-col">
         <main className="flex-1 p-4 md:p-8">
           <ScrollAnimation animation="fadeIn">
-            {/* Header */}
             <div className="mb-8">
               <button
                 onClick={() => router.push('/dashboard')}
@@ -226,7 +224,6 @@ export default function AccountDetailPage() {
               </div>
             )}
 
-            {/* Actions */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <button
                 onClick={() => setShowTransferModal(true)}
@@ -261,7 +258,6 @@ export default function AccountDetailPage() {
               </button>
             </div>
 
-            {/* Transactions */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="p-6 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-deep-teal">Recent Transactions</h2>
@@ -406,18 +402,17 @@ export default function AccountDetailPage() {
         </div>
       )}
 
-      {/* OTP Modal */}
-      {showOtpModal && otpRequestId && (
-        <OTPModal
-          requestId={otpRequestId}
-          onVerify={handleOtpVerify}
-          onClose={() => {
-            setShowOtpModal(false)
-            setOtpCode('')
-            setPendingTransfer(null)
-          }}
-        />
-      )}
+      {/* OTP Modal - Using new props */}
+      <OTPModal
+        isOpen={showOtpModal}
+        onClose={() => {
+          setShowOtpModal(false)
+          setOtpRequestId(null)
+          setPendingTransfer(null)
+        }}
+        onVerify={handleOtpVerify}
+        email={authUser?.email}
+      />
     </div>
   )
 }
