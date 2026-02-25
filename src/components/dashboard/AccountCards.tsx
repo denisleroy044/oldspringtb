@@ -1,39 +1,36 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { getUserAccounts, BankAccount } from '@/lib/db/accountService'
 import { OpenAccountModal } from './OpenAccountModal'
-
-interface Account {
-  id: string
-  name: string
-  type: 'checking' | 'savings' | 'credit'
-  balance: number
-  accountNumber: string
-  status: 'active' | 'frozen' | 'closed'
-}
+import Link from 'next/link'
 
 export function AccountCards() {
-  const { user: authUser } = useAuth()
+  const { user } = useAuth()
+  const [accounts, setAccounts] = useState<BankAccount[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showOpenAccountModal, setShowOpenAccountModal] = useState(false)
-  const [accounts, setAccounts] = useState<Account[]>([
-    {
-      id: '1',
-      name: 'Primary Checking',
-      type: 'checking',
-      balance: 5280.42,
-      accountNumber: '****1234',
-      status: 'active'
-    },
-    {
-      id: '2',
-      name: 'High-Yield Savings',
-      type: 'savings',
-      balance: 12750.89,
-      accountNumber: '****5678',
-      status: 'active'
+
+  useEffect(() => {
+    async function loadAccounts() {
+      if (!user?.id) return
+      
+      try {
+        setLoading(true)
+        const data = await getUserAccounts(user.id)
+        setAccounts(data)
+      } catch (err) {
+        console.error('Error loading accounts:', err)
+        setError('Failed to load accounts')
+      } finally {
+        setLoading(false)
+      }
     }
-  ])
+
+    loadAccounts()
+  }, [user?.id])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -44,25 +41,55 @@ export function AccountCards() {
 
   const getAccountIcon = (type: string) => {
     switch(type) {
-      case 'checking': return '💰'
-      case 'savings': return '🏦'
-      case 'credit': return '💳'
+      case 'CHECKING': return '💰'
+      case 'SAVINGS': return '🏦'
+      case 'CREDIT': return '💳'
       default: return '💰'
     }
   }
 
   const getStatusColor = (status: string) => {
     switch(status) {
-      case 'active': return 'bg-green-100 text-green-800'
-      case 'frozen': return 'bg-blue-100 text-blue-800'
-      case 'closed': return 'bg-gray-100 text-gray-800'
+      case 'ACTIVE': return 'bg-green-100 text-green-800'
+      case 'FROZEN': return 'bg-blue-100 text-blue-800'
+      case 'CLOSED': return 'bg-gray-100 text-gray-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
 
-  const handleAccountOpened = () => {
-    // Refresh accounts list (in real app, fetch from API)
-    // For now, just show success message via the modal
+  const handleAccountOpened = async () => {
+    // Refresh accounts list
+    if (user?.id) {
+      const data = await getUserAccounts(user.id)
+      setAccounts(data)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-deep-teal mb-4">Your Accounts</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1,2,3].map(i => (
+            <div key={i} className="bg-white rounded-xl shadow-lg p-6 animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-20 mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-24 mb-4"></div>
+              <div className="h-6 bg-gray-200 rounded w-28"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-deep-teal mb-4">Your Accounts</h2>
+        <p className="text-red-500">{error}</p>
+      </div>
+    )
   }
 
   return (
@@ -80,9 +107,10 @@ export function AccountCards() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {accounts.map((account) => (
-            <div
+            <Link
               key={account.id}
-              className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all"
+              href={`/dashboard/accounts/${account.id}`}
+              className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all block"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
@@ -91,7 +119,7 @@ export function AccountCards() {
                   <p className="text-xs text-gray-500">{account.accountNumber}</p>
                 </div>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(account.status)}`}>
-                  {account.status}
+                  {account.status.toLowerCase()}
                 </span>
               </div>
 
@@ -101,16 +129,7 @@ export function AccountCards() {
                   {formatCurrency(account.balance)}
                 </p>
               </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <button className="text-sm text-deep-teal hover:text-soft-gold transition-colors mr-4">
-                  View Details
-                </button>
-                <button className="text-sm text-deep-teal hover:text-soft-gold transition-colors">
-                  Transfer
-                </button>
-              </div>
-            </div>
+            </Link>
           ))}
 
           {/* Add Account Card */}
@@ -124,7 +143,6 @@ export function AccountCards() {
         </div>
       </div>
 
-      {/* Open Account Modal - Using correct props */}
       <OpenAccountModal
         isOpen={showOpenAccountModal}
         onClose={() => setShowOpenAccountModal(false)}

@@ -1,47 +1,127 @@
 'use client'
 
-import { useDashboardContext } from '@/context/DashboardContext'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/context/AuthContext'
+import { getUserTransactions, Transaction } from '@/lib/db/transactionService'
+import Link from 'next/link'
 
 export function RecentActivity() {
-  const { transactions } = useDashboardContext()
+  const { user } = useAuth()
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  if (!transactions) return null
+  useEffect(() => {
+    async function loadTransactions() {
+      if (!user?.id) return
+      
+      try {
+        setLoading(true)
+        const data = await getUserTransactions(user.id, 5)
+        setTransactions(data)
+      } catch (err) {
+        console.error('Error loading transactions:', err)
+        setError('Failed to load transactions')
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const recentTransactions = transactions.slice(0, 3)
+    loadTransactions()
+  }, [user?.id])
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(Math.abs(amount))
+  }
+
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-deep-teal mb-4">Recent Activity</h2>
+        <div className="space-y-4">
+          {[1,2,3].map(i => (
+            <div key={i} className="animate-pulse flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                <div>
+                  <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-24"></div>
+                </div>
+              </div>
+              <div className="h-4 bg-gray-200 rounded w-20"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-deep-teal mb-4">Recent Activity</h2>
+        <p className="text-red-500 text-sm">{error}</p>
+      </div>
+    )
+  }
+
+  if (transactions.length === 0) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-deep-teal mb-4">Recent Activity</h2>
+        <p className="text-gray-500 text-sm">No recent transactions</p>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
-      <h3 className="text-lg font-semibold text-[#1e3a5f] mb-4">Recent Activity</h3>
+      <h2 className="text-xl font-semibold text-deep-teal mb-4">Recent Activity</h2>
+      
       <div className="space-y-4">
-        {recentTransactions.map((transaction) => (
-          <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-3">
+        {transactions.map((transaction) => (
+          <div
+            key={transaction.id}
+            className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+          >
+            <div className="flex items-center gap-3">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                transaction.type === 'credit' ? 'bg-green-100' : 'bg-red-100'
+                transaction.type === 'CREDIT' ? 'bg-green-100' : 'bg-red-100'
               }`}>
-                <svg className={`w-4 h-4 ${
-                  transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {transaction.type === 'credit' ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-                  )}
-                </svg>
+                <span className={transaction.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'}>
+                  {transaction.type === 'CREDIT' ? '↓' : '↑'}
+                </span>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">{transaction.accountName}</p>
-                <p className="text-xs text-gray-500">{transaction.date}</p>
+                <p className="font-medium text-gray-900">{transaction.description}</p>
+                <p className="text-xs text-gray-500">{formatDate(transaction.date)} • {transaction.category}</p>
               </div>
             </div>
-            <p className={`text-sm font-semibold ${
-              transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+            <span className={`font-medium ${
+              transaction.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'
             }`}>
-              {transaction.type === 'credit' ? '+' : '-'}${transaction.amount.toFixed(2)}
-            </p>
+              {transaction.type === 'CREDIT' ? '+' : '-'}{formatCurrency(transaction.amount)}
+            </span>
           </div>
         ))}
       </div>
+
+      <Link 
+        href="/dashboard/transactions"
+        className="mt-4 text-sm text-deep-teal hover:text-soft-gold transition-colors inline-block"
+      >
+        View All Transactions →
+      </Link>
     </div>
   )
 }
