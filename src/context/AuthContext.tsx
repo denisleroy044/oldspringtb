@@ -1,42 +1,50 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { getCurrentUser, logout as authLogout } from '@/lib/auth/authService'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { getCurrentUser, logout as authLogout, User } from '@/lib/auth/authService'
+import { useRouter } from 'next/navigation'
 
 interface AuthContextType {
-  user: any | null
+  user: User | null
+  setUser: (user: User | null) => void
   loading: boolean
-  logout: () => void
-  refreshUser: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any | null>(null)
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
-    loadUser()
+    checkUser()
   }, [])
 
-  const loadUser = () => {
-    const currentUser = getCurrentUser()
-    setUser(currentUser)
-    setLoading(false)
+  const checkUser = async () => {
+    try {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    } catch (error) {
+      console.error('Error checking user:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const logout = () => {
-    authLogout()
-    setUser(null)
-  }
-
-  const refreshUser = () => {
-    loadUser()
+  const logout = async () => {
+    try {
+      await authLogout()
+      setUser(null)
+      router.push('/auth/login')
+    } catch (error) {
+      console.error('Error logging out:', error)
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, setUser, loading, logout }}>
       {children}
     </AuthContext.Provider>
   )
