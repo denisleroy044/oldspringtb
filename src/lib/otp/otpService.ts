@@ -1,6 +1,4 @@
-import { sendEmail, generateOTPEmail } from './emailService';
-
-// In production, use Redis or database
+// Store OTPs (in production, use Redis or database)
 const otpStore: Map<string, { code: string; expires: Date; attempts: number }> = new Map();
 
 // Generate a random 6-digit OTP
@@ -8,10 +6,11 @@ export const generateOTP = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Request OTP for a user
+// Request OTP for a user - NOW ACCEPTS NAME PARAMETER
 export const requestOTP = async (
   identifier: string,
-  purpose: string
+  purpose: string,
+  userName?: string
 ): Promise<{ success: boolean; requestId?: string; message?: string; error?: string }> => {
   try {
     // Generate OTP
@@ -25,28 +24,27 @@ export const requestOTP = async (
       attempts: 0
     });
 
-    // Send via email
+    // For email
     if (identifier.includes('@')) {
-      const emailContent = generateOTPEmail(otp, purpose === '2fa' ? 'User' : undefined);
-      emailContent.to = identifier;
-      
-      const result = await sendEmail(emailContent);
+      // Call our API route with the user's name
+      const response = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: identifier, 
+          otp,
+          name: userName  // Pass the user's name for personalization
+        })
+      });
+
+      const result = await response.json();
       
       if (!result.success) {
         otpStore.delete(requestId);
-        return { 
-          success: false, 
-          error: result.error || 'Failed to send email'
-        };
+        return { success: false, error: 'Failed to send email' };
       }
       
       console.log(`✅ OTP sent to ${identifier} for ${purpose}`);
-    } 
-    // Send via SMS (if you have Twilio set up)
-    else if (identifier.match(/^\+?[1-9]\d{1,14}$/)) {
-      // Implement SMS sending here with Twilio
-      console.log(`📱 SMS would be sent to ${identifier} with code: ${otp}`);
-      // await sendSMS(identifier, `Your Oldspring Trust verification code is: ${otp}`);
     }
 
     return {
@@ -98,14 +96,15 @@ export const verifyOTP = async (
   return false;
 };
 
-// Resend OTP
+// Resend OTP - UPDATED WITH NAME PARAMETER
 export const resendOTP = async (
   requestId: string,
-  identifier: string
+  identifier: string,
+  userName?: string
 ): Promise<{ success: boolean; newRequestId?: string; error?: string }> => {
   // Delete old OTP
   otpStore.delete(requestId);
   
-  // Request new OTP
-  return requestOTP(identifier, 'resend');
+  // Request new OTP with user's name
+  return requestOTP(identifier, 'resend', userName);
 };

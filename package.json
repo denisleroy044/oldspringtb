@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@prisma/client": "^7.4.1",
+    "@sendgrid/mail": "^8.1.6",
     "@types/react-webcam": "^1.1.0",
+    "africastalking": "^0.7.9",
     "bcryptjs": "^3.0.3",
     "framer-motion": "^12.34.3",
     "next": "14.0.4",
@@ -20,12 +22,14 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-facebook-pixel": "^1.0.4",
-    "react-webcam": "^7.2.0"
+    "react-webcam": "^7.2.0",
+    "resend": "^6.9.2",
+    "twilio": "^5.12.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
-    "@types/nodemailer": "^7.0.10",
+    "@types/nodemailer": "^7.0.11",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.4.16",

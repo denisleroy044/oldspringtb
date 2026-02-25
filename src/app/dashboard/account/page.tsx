@@ -180,7 +180,8 @@ function AccountContent() {
     setIsLoading(true)
     
     try {
-      const response = await requestOTP(user.email, '2fa')
+      // Pass user.name for personalization in the OTP email
+      const response = await requestOTP(user.email, '2fa', user.name)
       if (response.requestId) {
         setOtpRequestId(response.requestId)
         setPendingAction({ type: '2fa', data: !twoFactorEnabled })
@@ -501,28 +502,9 @@ function AccountContent() {
                 </div>
                 <p className="text-sm text-gray-600">
                   {twoFactorEnabled 
-                    ? 'Two-factor authentication is enabled. You\'ll need a verification code from your authenticator app or email to sign in.' 
+                    ? 'Two-factor authentication is enabled. You\'ll need a verification code from your email to sign in.' 
                     : 'Enable two-factor authentication to protect your account with an additional verification step.'}
                 </p>
-              </div>
-
-              {/* Active Sessions */}
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h2 className="text-xl font-semibold text-deep-teal mb-4">Active Sessions</h2>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-soft-gold/20 rounded-full flex items-center justify-center">
-                        <span className="text-xl">💻</span>
-                      </div>
-                      <div>
-                        <p className="font-medium">Current Session</p>
-                        <p className="text-sm text-gray-500">Windows • Chrome • IP: 192.168.1.1</p>
-                      </div>
-                    </div>
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Active Now</span>
-                  </div>
-                </div>
               </div>
             </div>
           </ScrollAnimation>
@@ -653,39 +635,23 @@ function AccountContent() {
                     </div>
                   </div>
                 </div>
-
-                {/* Theme Preference (placeholder) */}
-                <div className="pt-4 border-t border-gray-200">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">Theme</label>
-                  <div className="flex gap-3">
-                    <button className="flex-1 p-4 border-2 border-deep-teal rounded-lg bg-deep-teal/5 text-deep-teal font-medium">
-                      Light
-                    </button>
-                    <button className="flex-1 p-4 border-2 border-gray-200 rounded-lg text-gray-500 hover:border-deep-teal transition-colors">
-                      Dark
-                    </button>
-                    <button className="flex-1 p-4 border-2 border-gray-200 rounded-lg text-gray-500 hover:border-deep-teal transition-colors">
-                      System
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           </ScrollAnimation>
         )}
 
         {/* OTP Modal */}
-        {showOtpModal && (
+        {showOtpModal && otpRequestId && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
               <h3 className="text-xl font-bold text-deep-teal mb-2">Verify Your Identity</h3>
-              <p className="text-gray-600 mb-4">Enter the verification code sent to your email.</p>
+              <p className="text-gray-600 mb-4">Enter the 6-digit verification code sent to {user.email}.</p>
               
               <input
                 type="text"
                 value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value)}
-                placeholder="Enter 6-digit code"
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent mb-4 text-center text-2xl tracking-widest"
                 maxLength={6}
               />
