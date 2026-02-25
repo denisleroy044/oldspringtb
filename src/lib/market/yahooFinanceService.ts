@@ -24,6 +24,15 @@ interface YahooHistoricalResponse {
   adjClose?: number
 }
 
+interface YahooSearchResponse {
+  quotes: Array<{
+    symbol: string
+    shortname?: string
+    longname?: string
+    quoteType?: string
+  }>
+}
+
 export interface MarketAsset {
   id: string
   symbol: string
@@ -144,7 +153,7 @@ export async function getHistoricalData(
 // Search for symbols
 export async function searchSymbols(query: string): Promise<Array<{ symbol: string; name: string; type: string }>> {
   try {
-    const results = await yahooFinance.search(query)
+    const results = await yahooFinance.search(query) as YahooSearchResponse
     return results.quotes.map(quote => ({
       symbol: quote.symbol,
       name: quote.shortname || quote.longname || quote.symbol,
