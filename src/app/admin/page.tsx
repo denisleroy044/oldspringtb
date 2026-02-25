@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
-import { loadUsers, saveUsers, addUserNotification } from '@/lib/auth/authService'
-import { User } from '@/lib/auth/authService'
+import { loadUsers, saveUsers, addUserNotification, User } from '@/lib/auth/authService'
 import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
 
 export default function AdminPage() {
@@ -57,9 +56,18 @@ export default function AdminPage() {
     if (!selectedUser) return
 
     try {
-      const updatedUsers = users.map(u => 
+      // Ensure role is properly typed as 'USER' | 'ADMIN'
+      const updatedRole = editForm.role as 'USER' | 'ADMIN'
+      
+      const updatedUsers: User[] = users.map(u => 
         u.id === selectedUser.id 
-          ? { ...u, ...editForm }
+          ? { 
+              ...u, 
+              name: editForm.name,
+              email: editForm.email,
+              role: updatedRole,
+              balance: editForm.balance
+            }
           : u
       )
       
@@ -82,8 +90,9 @@ export default function AdminPage() {
 
   const handleToggleRole = async (user: User) => {
     try {
-      const newRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN'
-      const updatedUsers = users.map(u =>
+      const newRole: 'USER' | 'ADMIN' = user.role === 'ADMIN' ? 'USER' : 'ADMIN'
+      
+      const updatedUsers: User[] = users.map(u =>
         u.id === user.id
           ? { ...u, role: newRole }
           : u
@@ -106,7 +115,7 @@ export default function AdminPage() {
 
   const handleUpdateBalance = async (user: User, newBalance: number) => {
     try {
-      const updatedUsers = users.map(u =>
+      const updatedUsers: User[] = users.map(u =>
         u.id === user.id
           ? { ...u, balance: newBalance }
           : u
