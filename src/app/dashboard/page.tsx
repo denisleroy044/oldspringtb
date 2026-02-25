@@ -12,7 +12,6 @@ import { Sidebar } from '@/components/dashboard/Sidebar'
 import { DashboardFooter } from '@/components/dashboard/Footer'
 import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
 
-export const dynamic = 'force-dynamic'
 
 export default function DashboardPage() {
   const router = useRouter()
