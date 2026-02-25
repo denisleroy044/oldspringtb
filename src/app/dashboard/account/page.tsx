@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import { updateUserProfile, changePassword, toggleTwoFactor, updateNotificationPreferences, updateAvatar, addUserNotification } from '@/lib/auth/authService'
 import { requestOTP, verifyOTP } from '@/lib/otp/otpService'
+import { OTPModal } from '@/components/dashboard/otp/OTPModal'
 import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
 
 export default function AccountPage() {
@@ -25,7 +26,6 @@ function AccountContent() {
   const [sidebarState, setSidebarState] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
   const [otpRequestId, setOtpRequestId] = useState<string | null>(null)
-  const [otpCode, setOtpCode] = useState('')
   const [showOtpModal, setShowOtpModal] = useState(false)
   const [pendingAction, setPendingAction] = useState<{
     type: 'profile' | 'password' | '2fa' | 'notifications' | 'avatar'
@@ -180,7 +180,6 @@ function AccountContent() {
     setIsLoading(true)
     
     try {
-      // Pass user.name for personalization in the OTP email
       const response = await requestOTP(user.email, '2fa', user.name)
       if (response.requestId) {
         setOtpRequestId(response.requestId)
@@ -235,13 +234,11 @@ function AccountContent() {
     }
   }
 
-  const handleOtpVerify = async () => {
-    if (!otpRequestId || !pendingAction || !user) return
-    
-    setIsLoading(true)
-    
+  const handleOtpVerify = async (code: string): Promise<boolean> => {
+    if (!otpRequestId || !pendingAction || !user) return false
+
     try {
-      const isValid = await verifyOTP(otpRequestId, otpCode)
+      const isValid = await verifyOTP(otpRequestId, code)
       if (isValid) {
         if (pendingAction.type === '2fa') {
           const newState = await toggleTwoFactor(pendingAction.data)
@@ -253,16 +250,16 @@ function AccountContent() {
           })
         }
         setShowOtpModal(false)
-        setOtpCode('')
+        setOtpRequestId(null)
         setPendingAction(null)
         setMessage({ type: 'success', text: 'Verification successful!' })
+        return true
       } else {
-        setMessage({ type: 'error', text: 'Invalid OTP code.' })
+        return false
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Verification failed.' })
-    } finally {
-      setIsLoading(false)
+      console.error('Verification error:', error)
+      return false
     }
   }
 
@@ -641,43 +638,16 @@ function AccountContent() {
         )}
 
         {/* OTP Modal */}
-        {showOtpModal && otpRequestId && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-              <h3 className="text-xl font-bold text-deep-teal mb-2">Verify Your Identity</h3>
-              <p className="text-gray-600 mb-4">Enter the 6-digit verification code sent to {user.email}.</p>
-              
-              <input
-                type="text"
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="000000"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent mb-4 text-center text-2xl tracking-widest"
-                maxLength={6}
-              />
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={handleOtpVerify}
-                  disabled={isLoading || otpCode.length !== 6}
-                  className="flex-1 bg-deep-teal text-white py-3 rounded-lg hover:bg-soft-gold transition-colors disabled:opacity-50"
-                >
-                  {isLoading ? 'Verifying...' : 'Verify'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowOtpModal(false)
-                    setOtpCode('')
-                    setPendingAction(null)
-                  }}
-                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <OTPModal
+          isOpen={showOtpModal}
+          onClose={() => {
+            setShowOtpModal(false)
+            setOtpRequestId(null)
+            setPendingAction(null)
+          }}
+          onVerify={handleOtpVerify}
+          email={user?.email}
+        />
       </div>
     </div>
   )
