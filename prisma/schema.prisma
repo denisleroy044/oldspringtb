@@ -1,90 +1,481 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  // url is now configured in prisma.config.ts or .env
 }
 
+// User model - core user information
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
-  password      String
-  firstName     String
-  lastName      String
-  phone         String?
-  role          Role      @default(USER)
-  isEmailVerified Boolean  @default(false)
+  name          String?
+  password      String?   // Hashed password
+  role          String    @default("USER") // USER, ADMIN
   twoFactorEnabled Boolean @default(false)
-  twoFactorSecret String?
+  avatar        String?   // URL to avatar image
+  phone         String?   // Phone number for SMS
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
+  // Relations
   accounts      Account[]
-  transactions  Transaction[]
+  notifications Notification[]
+  sentTransfers Transfer[]   @relation("SentTransfers")
+  receivedTransfers Transfer[] @relation("ReceivedTransfers")
+  otpRequests   OTPRequest[]
+  sessions      Session[]
+  bills         Bill[]
+  cards         Card[]
+  investments   Investment[]
+  watchlists    Watchlist[]
+  supportTickets SupportTicket[]
+  beneficiaries Beneficiary[]
+  loanApplications LoanApplication[]
+  accountOpeningRequests AccountOpeningRequest[]
+  preferences   UserPreference?
 }
 
+// User preferences for notifications and settings
+model UserPreference {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+  emailEnabled  Boolean   @default(true)
+  pushEnabled   Boolean   @default(true)
+  smsEnabled    Boolean   @default(false)
+  theme         String    @default("light") // light, dark, system
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Bank accounts
 model Account {
-  id          String    @id @default(cuid())
-  accountNumber String  @unique
-  accountType AccountType
-  currency    Currency  @default(USD)
-  balance     Float     @default(0)
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  name          String
+  type          String    // CHECKING, SAVINGS, CREDIT, INVESTMENT
+  balance       Float     @default(0)
+  currency      String    @default("USD")
+  accountNumber String    @unique
+  routingNumber String?
+  status        String    @default("ACTIVE") // ACTIVE, FROZEN, CLOSED, PENDING
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
   
-  transactionsFrom Transaction[] @relation("FromAccount")
-  transactionsTo   Transaction[] @relation("ToAccount")
+  // Relations
+  transactions  Transaction[]
+  cards         Card[]
+  bills         Bill[]
+  sentTransfersFrom Transfer[] @relation("SentTransfersFrom")
+  sentTransfersTo Transfer[] @relation("SentTransfersTo")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([accountNumber])
 }
 
+// Transactions (deposits, withdrawals, transfers, payments)
 model Transaction {
-  id              String    @id @default(cuid())
-  amount          Float
-  type            TransactionType
-  status          TransactionStatus @default(PENDING)
-  description     String?
-  fromAccountId   String?
-  toAccountId     String?
-  fromAccount     Account?  @relation("FromAccount", fields: [fromAccountId], references: [id])
-  toAccount       Account?  @relation("ToAccount", fields: [toAccountId], references: [id])
-  userId          String
-  user            User      @relation(fields: [userId], references: [id])
-  createdAt       DateTime  @default(now())
-  completedAt     DateTime?
+  id            String    @id @default(cuid())
+  date          DateTime  @default(now())
+  description   String
+  amount        Float
+  type          String    // CREDIT, DEBIT, TRANSFER, FEE, INTEREST
+  category      String?   // Income, Groceries, Entertainment, etc.
+  status        String    @default("COMPLETED") // COMPLETED, PENDING, FAILED, CANCELLED
+  reference     String?   // External reference number
+  counterparty  String?   // Who the transaction was with
+  tags          String[]  // For categorizing
+  
+  accountId     String
+  account       Account   @relation(fields: [accountId], references: [id])
+  
+  // For transfers between accounts
+  fromAccountId String?
+  toAccountId   String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([accountId])
+  @@index([date])
+  @@index([status])
 }
 
-enum Role {
-  USER
-  ADMIN
-  SUPER_ADMIN
+// Transfers between accounts (internal and external)
+model Transfer {
+  id            String    @id @default(cuid())
+  amount        Float
+  description   String?
+  status        String    @default("PENDING") // PENDING, COMPLETED, FAILED, CANCELLED
+  type          String    // INTERNAL, EXTERNAL, WIRE, ACH
+  scheduledDate DateTime?
+  completedDate DateTime?
+  
+  // For internal transfers
+  fromAccountId String?
+  fromAccount   Account?  @relation("SentTransfersFrom", fields: [fromAccountId], references: [id])
+  
+  toAccountId   String?
+  toAccount     Account?  @relation("SentTransfersTo", fields: [toAccountId], references: [id])
+  
+  // For external transfers
+  fromUserId    String?
+  fromUser      User?     @relation("SentTransfers", fields: [fromUserId], references: [id])
+  
+  toUserId      String?
+  toUser        User?     @relation("ReceivedTransfers", fields: [toUserId], references: [id])
+  
+  externalAccountName String?  // For external transfers
+  externalAccountNumber String?
+  externalRoutingNumber String?
+  externalBankName String?
+  
+  fee           Float     @default(0)
+  reference     String?   // Transaction reference
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([fromAccountId])
+  @@index([toAccountId])
+  @@index([status])
+  @@index([scheduledDate])
 }
 
-enum AccountType {
-  CHECKING
-  SAVINGS
-  CREDIT_CARD
-  INVESTMENT
+// Credit/Debit cards
+model Card {
+  id            String    @id @default(cuid())
+  type          String    // DEBIT, CREDIT, VIRTUAL
+  brand         String    // VISA, MASTERCARD, AMEX, DISCOVER
+  lastFour      String
+  cardholderName String
+  expiryMonth   Int
+  expiryYear    Int
+  status        String    @default("ACTIVE") // ACTIVE, INACTIVE, BLOCKED, EXPIRED
+  isVirtual     Boolean   @default(false)
+  
+  // Credit card specific
+  creditLimit   Float?
+  availableCredit Float?
+  currentBalance Float?   @default(0)
+  apr           Float?    // Annual Percentage Rate
+  rewardsPoints Int?      @default(0)
+  
+  accountId     String
+  account       Account   @relation(fields: [accountId], references: [id])
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([accountId])
+  @@index([userId])
+  @@index([status])
 }
 
-enum Currency {
-  USD
-  EUR
-  GBP
+// Bills and recurring payments
+model Bill {
+  id            String    @id @default(cuid())
+  company       String
+  accountNumber String
+  amount        Float
+  dueDate       DateTime
+  category      String
+  status        String    @default("PENDING") // PENDING, PAID, OVERDUE, SCHEDULED, CANCELLED
+  autoPay       Boolean   @default(false)
+  paymentMethod String?   // ACCOUNT, CARD
+  notes         String?
+  
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  accountId     String?
+  account       Account?  @relation(fields: [accountId], references: [id])
+  
+  paidAmount    Float?
+  paidDate      DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([dueDate])
 }
 
-enum TransactionType {
-  DEPOSIT
-  WITHDRAWAL
-  TRANSFER
-  PAYMENT
+// Investment portfolios
+model Investment {
+  id            String    @id @default(cuid())
+  symbol        String
+  name          String
+  type          String    // STOCK, CRYPTO, ETF, BOND, COMMODITY
+  quantity      Float
+  purchasePrice Float
+  currentPrice  Float
+  totalValue    Float
+  gainLoss      Float
+  gainLossPercent Float
+  
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([symbol])
 }
 
-enum TransactionStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-  CANCELLED
+// Watchlist for investments
+model Watchlist {
+  id            String    @id @default(cuid())
+  symbol        String
+  name          String
+  type          String
+  alertPrice    Float?
+  
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, symbol])
+  @@index([userId])
+}
+
+// Notifications
+model Notification {
+  id            String    @id @default(cuid())
+  title         String
+  message       String
+  type          String    // INFO, SUCCESS, WARNING, ERROR
+  isRead        Boolean   @default(false)
+  link          String?   // Optional link to click
+  
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  createdAt     DateTime  @default(now())
+  readAt        DateTime?
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// OTP Verification
+model OTPRequest {
+  id            String    @id @default(cuid())
+  code          String
+  purpose       String    // LOGIN, TRANSFER, PAYMENT, 2FA, ACCOUNT_OPENING
+  expiresAt     DateTime
+  attempts      Int       @default(0)
+  isVerified    Boolean   @default(false)
+  
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  identifier    String    // email or phone where OTP was sent
+  createdAt     DateTime  @default(now())
+  verifiedAt    DateTime?
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([isVerified])
+}
+
+// User sessions
+model Session {
+  id            String    @id @default(cuid())
+  sessionToken  String    @unique
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  expires       DateTime
+  userAgent     String?
+  ipAddress     String?
+  
+  createdAt     DateTime  @default(now())
+  lastActive    DateTime  @default(now())
+
+  @@index([userId])
+  @@index([sessionToken])
+  @@index([expires])
+}
+
+// Audit logs for security
+model AuditLog {
+  id            String    @id @default(cuid())
+  userId        String?
+  action        String    // LOGIN, LOGOUT, TRANSFER, PAYMENT, PROFILE_UPDATE, etc.
+  details       String?
+  ipAddress     String?
+  userAgent     String?
+  status        String    // SUCCESS, FAILED, ATTEMPT
+  
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([status])
+}
+
+// Support tickets
+model SupportTicket {
+  id            String    @id @default(cuid())
+  subject       String
+  message       String
+  status        String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority      String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  category      String    // ACCOUNT, CARD, TRANSFER, TECHNICAL, OTHER
+  
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  assignedTo    String?   // Admin/staff ID
+  resolvedAt    DateTime?
+  
+  attachments   String[]  // URLs to attached files
+  responses     TicketResponse[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+}
+
+// Ticket responses
+model TicketResponse {
+  id            String    @id @default(cuid())
+  message       String
+  isStaff       Boolean   @default(false)
+  staffName     String?
+  
+  ticketId      String
+  ticket        SupportTicket @relation(fields: [ticketId], references: [id])
+  
+  attachments   String[]
+  
+  createdAt     DateTime  @default(now())
+
+  @@index([ticketId])
+}
+
+// Beneficiaries for quick transfers
+model Beneficiary {
+  id            String    @id @default(cuid())
+  name          String
+  accountNumber String
+  routingNumber String?
+  bankName      String?
+  email         String?
+  phone         String?
+  isSaved       Boolean   @default(true)
+  
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, accountNumber])
+  @@index([userId])
+}
+
+// Loan applications
+model LoanApplication {
+  id            String    @id @default(cuid())
+  type          String    // PERSONAL, AUTO, MORTGAGE, BUSINESS
+  amount        Float
+  term          Int       // in months
+  purpose       String
+  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED, DISBURSED
+  employmentStatus String
+  annualIncome  Float
+  creditScore   Int?
+  
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  approvedAmount Float?
+  approvedTerm  Int?
+  interestRate  Float?
+  monthlyPayment Float?
+  
+  disbursedAt   DateTime?
+  completedAt   DateTime?
+  
+  documents     String[]  // URLs to uploaded documents
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+}
+
+// Account opening requests
+model AccountOpeningRequest {
+  id            String    @id @default(cuid())
+  accountType   String    // CHECKING, SAVINGS, CREDIT
+  firstName     String
+  lastName      String
+  email         String
+  phone         String
+  address       String
+  city          String
+  state         String
+  zipCode       String
+  ssn           String    // Last 4 digits
+  employmentStatus String
+  annualIncome  Float?
+  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED, COMPLETED
+  notes         String?
+  
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id])
+  
+  approvedAt    DateTime?
+  rejectedAt    DateTime?
+  rejectionReason String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Interest rates and fees (for admin)
+model ProductRate {
+  id            String    @id @default(cuid())
+  productType   String    // SAVINGS, CHECKING, LOAN, MORTGAGE, CREDIT_CARD
+  name          String
+  rate          Float
+  term          String?   // e.g., "18 months", "36 months"
+  minAmount     Float?
+  maxAmount     Float?
+  isActive      Boolean   @default(true)
+  description   String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([productType])
+  @@index([isActive])
 }
