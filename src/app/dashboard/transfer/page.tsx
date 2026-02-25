@@ -1,554 +1,477 @@
 'use client'
 
-import { DashboardProvider, useDashboardContext } from '@/context/DashboardContext'
-import { Header } from '@/components/dashboard/Header'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/context/AuthContext'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { DashboardFooter } from '@/components/dashboard/Footer'
-import { useState, useEffect } from 'react'
 import { OTPModal } from '@/components/dashboard/otp/OTPModal'
-import { requestOTP, verifyOTP } from '@/lib/otp/otpUtils'
-import { useAuth } from '@/context/AuthContext'
+import { requestOTP, verifyOTP } from '@/lib/otp/otpService'
+import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
 
-interface TransferDetails {
+interface Account {
+  id: string
+  name: string
+  type: 'checking' | 'savings' | 'credit'
+  balance: number
   accountNumber: string
-  accountName: string
-  bankName: string
-  amount: string
-  swiftCode: string
-  routingNumber: string
-  description: string
-  transferType: 'internal' | 'external' | 'international'
 }
 
-function TransferContent() {
-  const { user, updateUserBalance } = useDashboardContext()
-  const { user: authUser } = useAuth()
-  const [step, setStep] = useState(1)
-  const [transferDetails, setTransferDetails] = useState<TransferDetails>({
+interface TransferRecipient {
+  id: string
+  name: string
+  accountNumber: string
+  bankName: string
+  isSaved: boolean
+}
+
+export default function TransferPage() {
+  const router = useRouter()
+  const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState<'internal' | 'external' | 'saved'>('internal')
+  const [fromAccount, setFromAccount] = useState('')
+  const [toAccount, setToAccount] = useState('')
+  const [toExternalAccount, setToExternalAccount] = useState({
     accountNumber: '',
-    accountName: '',
-    bankName: '',
-    amount: '',
-    swiftCode: '',
     routingNumber: '',
-    description: '',
-    transferType: 'internal'
+    bankName: '',
+    accountName: ''
   })
-  const [showOTP, setShowOTP] = useState(false)
-  const [otpRequestId, setOtpRequestId] = useState('')
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState('')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [amount, setAmount] = useState('')
+  const [description, setDescription] = useState('')
+  const [scheduleDate, setScheduleDate] = useState('')
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [recurringFrequency, setRecurringFrequency] = useState('monthly')
+  const [showOtpModal, setShowOtpModal] = useState(false)
+  const [otpRequestId, setOtpRequestId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-  useEffect(() => {
-    const handleSidebarChange = (e: CustomEvent) => {
-      setSidebarCollapsed(e.detail.collapsed)
+  // Mock accounts
+  const accounts: Account[] = [
+    {
+      id: '1',
+      name: 'Primary Checking',
+      type: 'checking',
+      balance: 5280.42,
+      accountNumber: '****1234'
+    },
+    {
+      id: '2',
+      name: 'High-Yield Savings',
+      type: 'savings',
+      balance: 12750.89,
+      accountNumber: '****5678'
+    },
+    {
+      id: '3',
+      name: 'Rewards Credit Card',
+      type: 'credit',
+      balance: -3249.25,
+      accountNumber: '****9012'
     }
-
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024)
-    }
-
-    window.addEventListener('sidebarChange' as any, handleSidebarChange)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-
-    return () => {
-      window.removeEventListener('sidebarChange' as any, handleSidebarChange)
-      window.removeEventListener('resize', checkMobile)
-    }
-  }, [])
-
-  if (!authUser) {
-    return null
-  }
-
-  const transferTypes = [
-    { id: 'internal', name: 'Internal Transfer', description: 'Between Oldspring accounts', icon: '🏦' },
-    { id: 'external', name: 'External Transfer', description: 'To other US banks', icon: '🏛️' },
-    { id: 'international', name: 'International', description: 'Worldwide transfer', icon: '🌍' },
   ]
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setTransferDetails(prev => ({ ...prev, [name]: value }))
-  }
+  // Mock saved recipients
+  const savedRecipients: TransferRecipient[] = [
+    {
+      id: '1',
+      name: 'John Doe',
+      accountNumber: '****4321',
+      bankName: 'Chase Bank',
+      isSaved: true
+    },
+    {
+      id: '2',
+      name: 'Jane Smith',
+      accountNumber: '****8765',
+      bankName: 'Wells Fargo',
+      isSaved: true
+    },
+    {
+      id: '3',
+      name: 'Rent Payment',
+      accountNumber: '****2468',
+      bankName: 'Property Management',
+      isSaved: true
+    }
+  ]
 
-  const validateStep1 = () => {
-    if (!transferDetails.accountNumber || transferDetails.accountNumber.length < 10) {
-      setError('Please enter a valid account number')
-      return false
-    }
-    if (!transferDetails.accountName) {
-      setError('Please enter the account name')
-      return false
-    }
-    if (transferDetails.transferType !== 'internal' && !transferDetails.bankName) {
-      setError('Please enter the bank name')
-      return false
-    }
-    setError('')
-    return true
-  }
+  const selectedFromAccount = accounts.find(a => a.id === fromAccount)
 
-  const validateStep2 = () => {
-    const amount = parseFloat(transferDetails.amount)
-    if (!transferDetails.amount || amount <= 0) {
-      setError('Please enter a valid amount')
-      return false
-    }
-    if (amount > (user?.balance || 0)) {
-      setError('Insufficient funds')
-      return false
-    }
-    if (transferDetails.transferType === 'international' && !transferDetails.swiftCode) {
-      setError('SWIFT code is required for international transfers')
-      return false
-    }
-    setError('')
-    return true
-  }
-
-  const handleNext = () => {
-    if (step === 1 && validateStep1()) {
-      setStep(2)
-    } else if (step === 2 && validateStep2()) {
-      setStep(3)
-    }
-  }
-
-  const handleBack = () => {
-    setStep(step - 1)
-    setError('')
-  }
-
-  const handleTransfer = async () => {
-    setIsProcessing(true)
+  const handleTransfer = async (e: React.FormEvent) => {
+    e.preventDefault()
     
-    const response = await requestOTP(user?.accountNumber || '1234567890', 'transfer')
-    if (response.success && response.requestId) {
-      setOtpRequestId(response.requestId)
-      setShowOTP(true)
+    if (!fromAccount) {
+      setMessage({ type: 'error', text: 'Please select a from account' })
+      return
     }
-    
-    setIsProcessing(false)
-  }
 
-  const handleOTPVerify = async (code: string): Promise<boolean> => {
-    if (code === 'RESEND') {
-      const response = await requestOTP(user?.accountNumber || '1234567890', 'transfer')
+    if (activeTab === 'internal' && !toAccount) {
+      setMessage({ type: 'error', text: 'Please select a destination account' })
+      return
+    }
+
+    if (activeTab === 'external' && (!toExternalAccount.accountNumber || !toExternalAccount.routingNumber)) {
+      setMessage({ type: 'error', text: 'Please enter external account details' })
+      return
+    }
+
+    const transferAmount = parseFloat(amount)
+    if (isNaN(transferAmount) || transferAmount <= 0) {
+      setMessage({ type: 'error', text: 'Please enter a valid amount' })
+      return
+    }
+
+    if (selectedFromAccount && transferAmount > selectedFromAccount.balance && selectedFromAccount.type !== 'credit') {
+      setMessage({ type: 'error', text: 'Insufficient funds' })
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      // Request OTP for verification
+      const response = await requestOTP(user?.email || '', 'transfer', user?.name)
       if (response.requestId) {
         setOtpRequestId(response.requestId)
+        setShowOtpModal(true)
       }
-      return true
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to request OTP' })
+      setIsLoading(false)
     }
+  }
 
-    const isValid = await verifyOTP(otpRequestId, code)
-    
-    if (isValid) {
-      const amount = parseFloat(transferDetails.amount)
-      const newBalance = (user?.balance || 0) - amount
-      updateUserBalance(newBalance)
-      setSuccess(true)
-      
-      setTimeout(() => {
-        setSuccess(false)
-        setStep(1)
-        setTransferDetails({
-          accountNumber: '',
-          accountName: '',
-          bankName: '',
-          amount: '',
-          swiftCode: '',
-          routingNumber: '',
-          description: '',
-          transferType: 'internal'
+  const handleOtpVerify = async (code: string): Promise<boolean> => {
+    if (!otpRequestId || !user) return false
+
+    try {
+      const isValid = await verifyOTP(otpRequestId, code)
+      if (isValid) {
+        // Process transfer
+        setMessage({ 
+          type: 'success', 
+          text: scheduleDate 
+            ? `Transfer of $${amount} scheduled for ${new Date(scheduleDate).toLocaleDateString()}` 
+            : `Transfer of $${amount} completed successfully` 
         })
-      }, 3000)
+        
+        // Reset form
+        setFromAccount('')
+        setToAccount('')
+        setToExternalAccount({
+          accountNumber: '',
+          routingNumber: '',
+          bankName: '',
+          accountName: ''
+        })
+        setAmount('')
+        setDescription('')
+        setScheduleDate('')
+        setIsRecurring(false)
+        setShowOtpModal(false)
+        setOtpRequestId(null)
+        return true
+      } else {
+        setMessage({ type: 'error', text: 'Invalid verification code' })
+        return false
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Verification failed' })
+      return false
+    } finally {
+      setIsLoading(false)
     }
-    
-    return isValid
   }
 
-  const getFee = () => {
-    const amount = parseFloat(transferDetails.amount) || 0
-    switch (transferDetails.transferType) {
-      case 'internal': return 0
-      case 'external': return amount * 0.01
-      case 'international': return amount * 0.03 + 25
-      default: return 0
-    }
-  }
-
-  const getTotal = () => {
-    const amount = parseFloat(transferDetails.amount) || 0
-    return amount + getFee()
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1e3a5f]"></div>
-      </div>
-    )
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount)
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
-      <div className={`flex-1 transition-all duration-300 flex flex-col ${
-        !isMobile && (sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64')
-      }`}>
-        <Header />
-        <main className="flex-1 pt-20 lg:pt-24 px-4 lg:px-6 pb-6">
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl lg:text-3xl font-bold text-[#1e3a5f]">Transfer Funds</h1>
-            <p className="text-sm lg:text-base text-gray-600 mt-1">Send money securely with OTP verification</p>
-          </div>
-
-          {/* Success Message */}
-          {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl animate-slide-in">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-semibold text-green-800">Transfer Successful!</p>
-                  <p className="text-sm text-green-600">${transferDetails.amount} sent to {transferDetails.accountName}</p>
-                </div>
-              </div>
+      <div className="flex-1 flex flex-col">
+        <main className="flex-1 p-4 md:p-8">
+          <ScrollAnimation animation="fadeIn">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-deep-teal mb-2">Transfer Money</h1>
+              <p className="text-gray-600">Send money to your accounts or external banks</p>
             </div>
-          )}
 
-          {/* Rest of your transfer form JSX */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-xl lg:rounded-2xl shadow-lg p-4 lg:p-6">
-                {/* Progress Steps */}
-                <div className="flex items-center justify-between mb-6 lg:mb-8">
-                  {[1, 2, 3].map((s) => (
-                    <div key={s} className="flex items-center flex-1">
-                      <div className={`w-6 h-6 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-sm lg:text-base ${
-                        s <= step ? 'bg-[#1e3a5f] text-white' : 'bg-gray-200 text-gray-500'
-                      }`}>
-                        {s < step ? (
-                          <svg className="w-3 h-3 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          s
-                        )}
-                      </div>
-                      {s < 3 && (
-                        <div className={`flex-1 h-0.5 lg:h-1 mx-1 lg:mx-2 ${
-                          s < step ? 'bg-[#1e3a5f]' : 'bg-gray-200'
-                        }`} />
-                      )}
-                    </div>
-                  ))}
+            {message && (
+              <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                {message.text}
+              </div>
+            )}
+
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 mb-6">
+              {[
+                { id: 'internal', label: 'Between My Accounts', icon: '🏦' },
+                { id: 'external', label: 'External Transfer', icon: '🌐' },
+                { id: 'saved', label: 'Saved Recipients', icon: '⭐' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all duration-300 border-b-2 ${
+                    activeTab === tab.id
+                      ? 'border-soft-gold text-deep-teal'
+                      : 'border-transparent text-gray-500 hover:text-deep-teal'
+                  }`}
+                >
+                  <span>{tab.icon}</span>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <form onSubmit={handleTransfer} className="space-y-6">
+                {/* From Account */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    From Account
+                  </label>
+                  <select
+                    value={fromAccount}
+                    onChange={(e) => setFromAccount(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select account</option>
+                    {accounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name} - {formatCurrency(account.balance)} ({account.accountNumber})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* Error Message */}
-                {error && (
-                  <div className="mb-4 lg:mb-6 p-3 lg:p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-xs lg:text-sm text-red-600">{error}</p>
+                {/* Internal Transfer - To Account */}
+                {activeTab === 'internal' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      To Account
+                    </label>
+                    <select
+                      value={toAccount}
+                      onChange={(e) => setToAccount(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                      required
+                    >
+                      <option value="">Select destination account</option>
+                      {accounts
+                        .filter(a => a.id !== fromAccount)
+                        .map((account) => (
+                          <option key={account.id} value={account.id}>
+                            {account.name} - {formatCurrency(account.balance)} ({account.accountNumber})
+                          </option>
+                        ))}
+                    </select>
                   </div>
                 )}
 
-                {/* Step 1: Recipient Details */}
-                {step === 1 && (
-                  <div className="space-y-3 lg:space-y-4">
-                    <h2 className="text-lg lg:text-xl font-semibold text-gray-900 mb-3 lg:mb-4">Recipient Details</h2>
-
-                    {/* Transfer Type */}
+                {/* External Transfer - To Account Details */}
+                {activeTab === 'external' && (
+                  <div className="space-y-4">
                     <div>
-                      <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-2">
-                        Transfer Type
-                      </label>
-                      <div className="grid grid-cols-3 gap-2 lg:gap-3">
-                        {transferTypes.map((type) => (
-                          <button
-                            key={type.id}
-                            onClick={() => setTransferDetails(prev => ({ ...prev, transferType: type.id as any }))}
-                            className={`p-2 lg:p-3 border-2 rounded-lg lg:rounded-xl text-center transition ${
-                              transferDetails.transferType === type.id
-                                ? 'border-[#1e3a5f] bg-[#1e3a5f] bg-opacity-5'
-                                : 'border-gray-200 hover:border-[#1e3a5f]'
-                            }`}
-                          >
-                            <span className="text-xl lg:text-2xl mb-1 block">{type.icon}</span>
-                            <p className="text-xs font-medium hidden lg:block">{type.name}</p>
-                            <p className="text-xs font-medium lg:hidden">{type.name.split(' ')[0]}</p>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">
-                        Account Number
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Account Holder Name
                       </label>
                       <input
                         type="text"
-                        name="accountNumber"
-                        value={transferDetails.accountNumber}
-                        onChange={handleInputChange}
-                        placeholder="Enter account number"
-                        className="w-full px-3 lg:px-4 py-2 lg:py-3 text-sm lg:text-base border-2 border-gray-200 rounded-lg lg:rounded-xl focus:outline-none focus:border-[#1e3a5f] transition"
+                        value={toExternalAccount.accountName}
+                        onChange={(e) => setToExternalAccount({ ...toExternalAccount, accountName: e.target.value })}
+                        placeholder="John Doe"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                        required
                       />
                     </div>
-
                     <div>
-                      <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">
-                        Account Name
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Bank Name
                       </label>
                       <input
                         type="text"
-                        name="accountName"
-                        value={transferDetails.accountName}
-                        onChange={handleInputChange}
-                        placeholder="Enter account holder name"
-                        className="w-full px-3 lg:px-4 py-2 lg:py-3 text-sm lg:text-base border-2 border-gray-200 rounded-lg lg:rounded-xl focus:outline-none focus:border-[#1e3a5f] transition"
+                        value={toExternalAccount.bankName}
+                        onChange={(e) => setToExternalAccount({ ...toExternalAccount, bankName: e.target.value })}
+                        placeholder="Chase Bank"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                        required
                       />
                     </div>
-
-                    {transferDetails.transferType !== 'internal' && (
+                    <div className="grid md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">
-                          Bank Name
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Account Number
                         </label>
                         <input
                           type="text"
-                          name="bankName"
-                          value={transferDetails.bankName}
-                          onChange={handleInputChange}
-                          placeholder="Enter bank name"
-                          className="w-full px-3 lg:px-4 py-2 lg:py-3 text-sm lg:text-base border-2 border-gray-200 rounded-lg lg:rounded-xl focus:outline-none focus:border-[#1e3a5f] transition"
+                          value={toExternalAccount.accountNumber}
+                          onChange={(e) => setToExternalAccount({ ...toExternalAccount, accountNumber: e.target.value })}
+                          placeholder="123456789"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                          required
                         />
                       </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Step 2: Amount & Details */}
-                {step === 2 && (
-                  <div className="space-y-3 lg:space-y-4">
-                    <h2 className="text-lg lg:text-xl font-semibold text-gray-900 mb-3 lg:mb-4">Amount & Details</h2>
-
-                    <div>
-                      <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">
-                        Amount
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 lg:left-4 top-2 lg:top-3 text-lg lg:text-2xl text-gray-500">$</span>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Routing Number
+                        </label>
                         <input
-                          type="number"
-                          name="amount"
-                          value={transferDetails.amount}
-                          onChange={handleInputChange}
-                          placeholder="0.00"
-                          min="1"
-                          step="0.01"
-                          className="w-full pl-8 lg:pl-12 pr-3 lg:pr-4 py-2 lg:py-3 text-lg lg:text-2xl border-2 border-gray-200 rounded-lg lg:rounded-xl focus:outline-none focus:border-[#1e3a5f] transition"
+                          type="text"
+                          value={toExternalAccount.routingNumber}
+                          onChange={(e) => setToExternalAccount({ ...toExternalAccount, routingNumber: e.target.value })}
+                          placeholder="021000021"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                          required
                         />
                       </div>
                     </div>
-
-                    {transferDetails.transferType === 'international' && (
-                      <>
-                        <div>
-                          <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">
-                            SWIFT Code
-                          </label>
-                          <input
-                            type="text"
-                            name="swiftCode"
-                            value={transferDetails.swiftCode}
-                            onChange={handleInputChange}
-                            placeholder="Enter SWIFT code"
-                            className="w-full px-3 lg:px-4 py-2 lg:py-3 text-sm lg:text-base border-2 border-gray-200 rounded-lg lg:rounded-xl focus:outline-none focus:border-[#1e3a5f] transition"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">
-                            Routing Number
-                          </label>
-                          <input
-                            type="text"
-                            name="routingNumber"
-                            value={transferDetails.routingNumber}
-                            onChange={handleInputChange}
-                            placeholder="Enter routing number"
-                            className="w-full px-3 lg:px-4 py-2 lg:py-3 text-sm lg:text-base border-2 border-gray-200 rounded-lg lg:rounded-xl focus:outline-none focus:border-[#1e3a5f] transition"
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    <div>
-                      <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">
-                        Description (Optional)
-                      </label>
-                      <textarea
-                        name="description"
-                        value={transferDetails.description}
-                        onChange={handleInputChange}
-                        rows={3}
-                        placeholder="Add a note to this transfer"
-                        className="w-full px-3 lg:px-4 py-2 lg:py-3 text-sm lg:text-base border-2 border-gray-200 rounded-lg lg:rounded-xl focus:outline-none focus:border-[#1e3a5f] transition"
-                      />
-                    </div>
                   </div>
                 )}
 
-                {/* Step 3: Review & Confirm */}
-                {step === 3 && (
-                  <div className="space-y-3 lg:space-y-4">
-                    <h2 className="text-lg lg:text-xl font-semibold text-gray-900 mb-3 lg:mb-4">Review & Confirm</h2>
-
-                    <div className="bg-gray-50 rounded-lg lg:rounded-xl p-3 lg:p-4 space-y-2 lg:space-y-3">
-                      <div className="flex justify-between text-sm lg:text-base">
-                        <span className="text-gray-600">From Account</span>
-                        <span className="font-semibold">{user?.accountNumber}</span>
-                      </div>
-                      <div className="flex justify-between text-sm lg:text-base">
-                        <span className="text-gray-600">To Account</span>
-                        <span className="font-semibold">{transferDetails.accountNumber}</span>
-                      </div>
-                      <div className="flex justify-between text-sm lg:text-base">
-                        <span className="text-gray-600">Account Name</span>
-                        <span className="font-semibold">{transferDetails.accountName}</span>
-                      </div>
-                      {transferDetails.bankName && (
-                        <div className="flex justify-between text-sm lg:text-base">
-                          <span className="text-gray-600">Bank</span>
-                          <span className="font-semibold">{transferDetails.bankName}</span>
-                        </div>
-                      )}
-                      <div className="border-t border-gray-200 my-2 pt-2">
-                        <div className="flex justify-between text-base lg:text-lg">
-                          <span className="text-gray-600">Amount</span>
-                          <span className="font-bold text-[#1e3a5f]">${parseFloat(transferDetails.amount).toLocaleString()}</span>
-                        </div>
-                        {getFee() > 0 && (
-                          <div className="flex justify-between text-xs lg:text-sm mt-1">
-                            <span className="text-gray-500">Transfer Fee</span>
-                            <span className="text-gray-700">${getFee().toFixed(2)}</span>
+                {/* Saved Recipients */}
+                {activeTab === 'saved' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Recipient
+                    </label>
+                    <div className="space-y-3">
+                      {savedRecipients.map((recipient) => (
+                        <div
+                          key={recipient.id}
+                          className="p-4 border border-gray-200 rounded-lg hover:border-soft-gold cursor-pointer transition-colors"
+                          onClick={() => {
+                            setToExternalAccount({
+                              accountNumber: recipient.accountNumber,
+                              routingNumber: '****',
+                              bankName: recipient.bankName,
+                              accountName: recipient.name
+                            })
+                            setActiveTab('external')
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-deep-teal">{recipient.name}</p>
+                              <p className="text-sm text-gray-500">{recipient.bankName} • {recipient.accountNumber}</p>
+                            </div>
+                            <span className="text-soft-gold">⭐</span>
                           </div>
-                        )}
-                        <div className="flex justify-between font-bold mt-2 pt-2 border-t border-gray-200">
-                          <span className="text-gray-700">Total Debit</span>
-                          <span className="text-[#1e3a5f]">${getTotal().toFixed(2)}</span>
                         </div>
-                      </div>
+                      ))}
                     </div>
-
-                    {transferDetails.description && (
-                      <div className="p-2 lg:p-3 bg-blue-50 rounded-lg">
-                        <p className="text-xs lg:text-sm text-gray-600">Note: {transferDetails.description}</p>
-                      </div>
-                    )}
                   </div>
                 )}
 
-                {/* Navigation Buttons */}
-                <div className="flex justify-between mt-4 lg:mt-6">
-                  {step > 1 && (
-                    <button
-                      onClick={handleBack}
-                      className="px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base border-2 border-gray-300 rounded-lg lg:rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition"
-                    >
-                      Back
-                    </button>
-                  )}
-                  <div className="flex-1" />
-                  {step < 3 ? (
-                    <button
-                      onClick={handleNext}
-                      className="px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base bg-[#1e3a5f] text-white rounded-lg lg:rounded-xl font-semibold hover:bg-[#2b4c7a] transition"
-                    >
-                      Continue
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleTransfer}
-                      disabled={isProcessing}
-                      className="px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base bg-[#1e3a5f] text-white rounded-lg lg:rounded-xl font-semibold hover:bg-[#2b4c7a] transition disabled:opacity-50"
-                    >
-                      {isProcessing ? (
-                        <span className="flex items-center">
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 lg:h-5 lg:w-5 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                          </svg>
-                          Processing...
-                        </span>
-                      ) : (
-                        'Confirm Transfer'
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Info Panel */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl lg:rounded-2xl shadow-lg p-4 lg:p-6">
-                <h3 className="text-sm lg:text-base font-semibold text-gray-900 mb-3 lg:mb-4">Transfer Information</h3>
-                
-                <div className="space-y-3 lg:space-y-4">
-                  <div className="p-2 lg:p-3 bg-blue-50 rounded-lg">
-                    <p className="text-xs lg:text-sm font-medium text-blue-800 mb-1">Available Balance</p>
-                    <p className="text-lg lg:text-2xl font-bold text-[#1e3a5f]">
-                      ${user?.balance.toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className="p-2 lg:p-3 bg-yellow-50 rounded-lg">
-                    <p className="text-xs lg:text-sm font-medium text-yellow-800 mb-1">Transfer Times</p>
-                    <p className="text-xs text-yellow-600">Internal: Instant</p>
-                    <p className="text-xs text-yellow-600">External: 1-2 business days</p>
-                    <p className="text-xs text-yellow-600">International: 3-5 business days</p>
-                  </div>
-
-                  <div className="p-2 lg:p-3 bg-green-50 rounded-lg">
-                    <p className="text-xs lg:text-sm font-medium text-green-800 mb-1">Security</p>
-                    <p className="text-xs text-green-600">✓ OTP verification required</p>
-                    <p className="text-xs text-green-600">✓ 256-bit encryption</p>
-                    <p className="text-xs text-green-600">✓ Fraud monitoring</p>
+                {/* Amount */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Amount
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <input
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0.01"
+                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                      required
+                    />
                   </div>
                 </div>
-              </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="e.g., Rent payment, Gift, etc."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                  />
+                </div>
+
+                {/* Schedule & Recurring */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Schedule (Optional)
+                    </label>
+                    <input
+                      type="date"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isRecurring}
+                          onChange={(e) => setIsRecurring(e.target.checked)}
+                          className="rounded border-gray-300 text-soft-gold focus:ring-soft-gold"
+                        />
+                        Make recurring
+                      </div>
+                    </label>
+                    {isRecurring && (
+                      <select
+                        value={recurringFrequency}
+                        onChange={(e) => setRecurringFrequency(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                      >
+                        <option value="weekly">Weekly</option>
+                        <option value="biweekly">Bi-weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                      </select>
+                    )}
+                  </div>
+                </div>
+
+                {/* Transfer Button */}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-gradient-to-r from-deep-teal to-sage text-white py-4 rounded-xl font-semibold hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 disabled:opacity-50"
+                >
+                  {isLoading ? 'Processing...' : scheduleDate ? 'Schedule Transfer' : 'Transfer Now'}
+                </button>
+              </form>
             </div>
-          </div>
+          </ScrollAnimation>
         </main>
         <DashboardFooter />
       </div>
 
-      {/* OTP Modal */}
+      {/* OTP Modal - Using standardized props */}
       <OTPModal
-        isOpen={showOTP}
-        onClose={() => setShowOTP(false)}
-        onVerify={handleOTPVerify}
-        phoneNumber={user?.phone || '****'}
-        purpose="transfer authorization"
+        isOpen={showOtpModal}
+        onClose={() => {
+          setShowOtpModal(false)
+          setOtpRequestId(null)
+          setIsLoading(false)
+        }}
+        onVerify={handleOtpVerify}
+        email={user?.email}
       />
     </div>
-  )
-}
-
-export default function TransferPage() {
-  return (
-    <DashboardProvider>
-      <TransferContent />
-    </DashboardProvider>
   )
 }
