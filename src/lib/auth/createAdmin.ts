@@ -1,40 +1,35 @@
-// Run this file once to create the admin user
 import { loadUsers, saveUsers } from './authService'
+import bcrypt from 'bcryptjs'
 
-export function createAdminUser() {
-  const users = loadUsers()
-  
-  // Check if admin already exists
-  const adminExists = users.some(u => u.isAdmin === true)
-  
-  if (!adminExists) {
-    const adminUser = {
-      id: 'admin_' + Date.now(),
-      firstName: 'Admin',
-      lastName: 'User',
-      email: 'admin@oldspring.com',
-      phone: '+1 (555) 000-0000',
-      password: 'admin123',
-      accountNumber: 'ADMIN001',
-      accountName: 'System Administrator',
-      accountStatus: 'active',
-      accountType: 'business',
-      balance: 0,
-      avatar: '/assets/img/avatars/admin-avatar.png',
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-      isAdmin: true,
-      notifications: []
-    }
+export async function createAdminIfNotExists() {
+  try {
+    // Check if admin already exists - AWAIT the Promise!
+    const users = await loadUsers()
+    const adminExists = users.some(u => u.role === 'ADMIN')
     
-    users.push(adminUser)
-    saveUsers(users)
-    console.log('✅ Admin user created successfully!')
-    console.log('📧 Email: admin@oldspring.com')
-    console.log('🔑 Password: admin123')
-  } else {
-    console.log('ℹ️ Admin user already exists')
+    if (!adminExists) {
+      const adminUser = {
+        id: `admin_${Date.now()}`,
+        email: 'admin@oldspring.com',
+        name: 'Admin User',
+        role: 'ADMIN' as const,
+        password: await bcrypt.hash('Admin123!', 10),
+        twoFactorEnabled: false,
+        balance: 0,
+        notificationPreferences: {
+          email: true,
+          push: true,
+          sms: false
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      const updatedUsers = [...users, adminUser]
+      await saveUsers(updatedUsers)
+      console.log('✅ Admin user created successfully')
+    }
+  } catch (error) {
+    console.error('Error creating admin user:', error)
   }
-  
-  return adminExists ? 'Admin exists' : 'Admin created'
 }
