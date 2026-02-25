@@ -164,7 +164,11 @@ export function Header() {
                         else navItemRefs.current.delete(item.name)
                       }}
                       className="relative nav-item"
-                      onMouseEnter={() => item.hasDropdown && handleMouseEnter(item.dropdownId, item.name)}
+                      onMouseEnter={() => {
+                        if (item.hasDropdown && item.dropdownId) {
+                          handleMouseEnter(item.dropdownId, item.name)
+                        }
+                      }}
                       onMouseLeave={handleMouseLeave}
                     >
                       <Link
@@ -180,7 +184,7 @@ export function Header() {
                             if (activeDropdown === item.dropdownId) {
                               setActiveDropdown(null)
                               setHoveredItem(null)
-                            } else {
+                            } else if (item.dropdownId) {
                               setActiveDropdown(item.dropdownId)
                               setHoveredItem(item.name)
                             }
