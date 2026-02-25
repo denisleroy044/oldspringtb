@@ -2,261 +2,242 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { 
-  startChat, 
-  sendMessage, 
-  getChatSession, 
-  getUserActiveChat,
-  endChat,
-  rateChat
-} from '@/lib/chat/chatService'
-import { ChatSession, ChatMessage } from '@/types/chat'
 
-interface ChatWindowProps {
-  onClose?: () => void
-  initialDepartment?: 'general' | 'technical' | 'billing' | 'security'
+interface Message {
+  id: string
+  sender: 'user' | 'agent'
+  content: string
+  timestamp: Date
+  agentName?: string
 }
 
-export function ChatWindow({ onClose, initialDepartment = 'general' }: ChatWindowProps) {
+interface ChatSession {
+  id: string
+  userId: string
+  userName: string
+  department: string
+  status: 'active' | 'closed' | 'waiting'
+  messages: Message[]
+  createdAt: Date
+  updatedAt: Date
+}
+
+export function ChatWindow() {
   const { user } = useAuth()
-  const [session, setSession] = useState<ChatSession | null>(null)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [isOpen, setIsOpen] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
+  const [session, setSession] = useState<ChatSession | null>(null)
   const [isTyping, setIsTyping] = useState(false)
-  const [showRating, setShowRating] = useState(false)
-  const [rating, setRating] = useState(0)
-  const [feedback, setFeedback] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [selectedDepartment, setSelectedDepartment] = useState('general')
 
-  useEffect(() => {
-    if (user) {
-      // Check for existing active chat
-      const activeChat = getUserActiveChat(user.id)
-      if (activeChat) {
-        setSession(activeChat)
-        setMessages(activeChat.messages)
-      } else {
-        // Start new chat
-        const newSession = startChat(
-          user.id,
-          user.accountName,
-          initialDepartment,
-          'Support Request'
-        )
-        setSession(newSession)
-        setMessages(newSession.messages)
-      }
-    }
-  }, [user])
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  useEffect(() => {
-    // Poll for new messages
-    if (!session) return
-
-    const interval = setInterval(() => {
-      const updatedSession = getChatSession(session.id)
-      if (updatedSession && updatedSession.messages.length > messages.length) {
-        setMessages(updatedSession.messages)
-      }
-    }, 2000)
-
-    return () => clearInterval(interval)
-  }, [session, messages])
+  const departments = [
+    { id: 'general', name: 'General Support' },
+    { id: 'accounts', name: 'Accounts & Cards' },
+    { id: 'transfers', name: 'Transfers & Payments' },
+    { id: 'loans', name: 'Loans & Mortgages' },
+    { id: 'technical', name: 'Technical Support' }
+  ]
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const handleSendMessage = () => {
-    if (!session || !inputMessage.trim() || !user) return
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
 
-    const newMessage = sendMessage(session.id, user.id, inputMessage)
-    setMessages([...messages, newMessage])
-    setInputMessage('')
-    
-    // Focus back on input
-    inputRef.current?.focus()
-  }
+  const startChat = async () => {
+    if (!user) return
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
+    // Mock starting a chat session
+    const newSession: ChatSession = {
+      id: Date.now().toString(),
+      userId: user.id,
+      userName: user.name || 'User',
+      department: selectedDepartment,
+      status: 'active',
+      messages: [
+        {
+          id: '1',
+          sender: 'agent',
+          content: `Hello ${user.name}! How can I help you with ${departments.find(d => d.id === selectedDepartment)?.name.toLowerCase()} today?`,
+          timestamp: new Date(),
+          agentName: 'Sarah'
+        }
+      ],
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
+
+    setSession(newSession)
+    setMessages(newSession.messages)
   }
 
-  const handleEndChat = () => {
-    if (!session || !user) return
-    
-    endChat(session.id, user.id)
-    setShowRating(true)
+  const sendMessage = () => {
+    if (!inputMessage.trim() || !session) return
+
+    // Add user message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      content: inputMessage,
+      timestamp: new Date()
+    }
+
+    setMessages(prev => [...prev, userMessage])
+    setInputMessage('')
+
+    // Simulate agent typing
+    setIsTyping(true)
+
+    setTimeout(() => {
+      const agentMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'agent',
+        content: "Thanks for your message. An agent will respond shortly. For immediate assistance, you can call our 24/7 support line at +44 (0)20 1234 5678.",
+        timestamp: new Date(),
+        agentName: 'Support Team'
+      }
+      setMessages(prev => [...prev, agentMessage])
+      setIsTyping(false)
+    }, 1500)
   }
 
-  const handleSubmitRating = () => {
-    if (!session) return
-    
-    rateChat(session.id, rating, feedback)
-    setShowRating(false)
-    if (onClose) onClose()
-  }
-
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+  const endChat = () => {
+    setSession(null)
+    setMessages([])
+    setIsOpen(false)
   }
 
   if (!user) return null
 
-  if (showRating) {
-    return (
-      <div className="bg-white rounded-2xl shadow-2xl w-96 max-w-full">
-        <div className="bg-gradient-to-r from-[#1e3a5f] to-[#2b4c7a] text-white p-4 rounded-t-2xl">
-          <h3 className="font-semibold">Rate Your Experience</h3>
-        </div>
-        <div className="p-6">
-          <p className="text-sm text-gray-600 mb-4">
-            How would you rate your support experience?
-          </p>
-          <div className="flex justify-center space-x-2 mb-4">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                onClick={() => setRating(star)}
-                className={`text-2xl transition ${
-                  star <= rating ? 'text-yellow-400' : 'text-gray-300'
-                }`}
-              >
-                ★
-              </button>
-            ))}
-          </div>
-          <textarea
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-            placeholder="Additional feedback (optional)"
-            rows={3}
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#1e3a5f] mb-4"
-          />
-          <button
-            onClick={handleSubmitRating}
-            className="w-full bg-[#1e3a5f] text-white py-3 rounded-xl font-medium hover:bg-[#2b4c7a] transition"
-          >
-            Submit Rating
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="bg-white rounded-2xl shadow-2xl w-96 max-w-full flex flex-col h-[600px]">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#1e3a5f] to-[#2b4c7a] text-white p-4 rounded-t-2xl flex justify-between items-center">
-        <div>
-          <h3 className="font-semibold">Customer Support</h3>
-          <p className="text-xs opacity-90">
-            {session?.status === 'active' ? 'Online' : 'Chat Ended'}
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          {session?.status === 'active' && (
-            <button
-              onClick={handleEndChat}
-              className="p-1 hover:bg-white/20 rounded transition"
-              title="End Chat"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-white/20 rounded transition"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-      </div>
+    <>
+      {/* Chat Button */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-4 right-4 bg-deep-teal text-white p-4 rounded-full shadow-lg hover:bg-soft-gold transition-colors z-50"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      </button>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-[80%] rounded-xl p-3 ${
-                msg.sender === 'user'
-                  ? 'bg-[#1e3a5f] text-white'
-                  : msg.sender === 'agent'
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'bg-gray-200 text-gray-600 italic'
-              }`}
-            >
-              {msg.sender !== 'user' && (
-                <p className="text-xs font-semibold mb-1 opacity-75">
-                  {msg.senderName}
+      {/* Chat Window */}
+      {isOpen && (
+        <div className="fixed bottom-20 right-4 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-50">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-deep-teal to-sage text-white p-4 rounded-t-lg flex justify-between items-center">
+            <div>
+              <h3 className="font-semibold">Customer Support</h3>
+              <p className="text-xs opacity-90">24/7 available</p>
+            </div>
+            <button onClick={() => setIsOpen(false)} className="hover:text-soft-gold transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="h-96 flex flex-col">
+            {!session ? (
+              <div className="p-4 space-y-4">
+                <p className="text-sm text-gray-600 mb-4">
+                  Hello {user.name}! How can we help you today?
                 </p>
-              )}
-              <p className="text-sm">{msg.message}</p>
-              <p className="text-xs text-right mt-1 opacity-75">
-                {formatTime(msg.timestamp)}
-              </p>
-            </div>
-          </div>
-        ))}
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-xl p-3">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Department
+                  </label>
+                  <select
+                    value={selectedDepartment}
+                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                  >
+                    {departments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={startChat}
+                  className="w-full bg-deep-teal text-white py-2 rounded-lg hover:bg-soft-gold transition-colors"
+                >
+                  Start Chat
+                </button>
               </div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+            ) : (
+              <>
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-lg p-3 ${
+                          message.sender === 'user'
+                            ? 'bg-deep-teal text-white'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {message.sender === 'agent' && (
+                          <p className="text-xs font-semibold mb-1">{message.agentName}</p>
+                        )}
+                        <p className="text-sm">{message.content}</p>
+                        <p className="text-xs mt-1 opacity-70">
+                          {new Date(message.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {isTyping && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 rounded-lg p-3">
+                        <p className="text-sm text-gray-500">Agent is typing...</p>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
 
-      {/* Input */}
-      {session?.status === 'active' && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex space-x-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#1e3a5f] transition"
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!inputMessage.trim()}
-              className="px-4 py-2 bg-[#1e3a5f] text-white rounded-xl hover:bg-[#2b4c7a] transition disabled:opacity-50"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
-            </button>
+                {/* Input */}
+                <div className="p-4 border-t border-gray-200">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                      placeholder="Type your message..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                    />
+                    <button
+                      onClick={sendMessage}
+                      disabled={!inputMessage.trim()}
+                      className="bg-deep-teal text-white px-4 py-2 rounded-lg hover:bg-soft-gold transition-colors disabled:opacity-50"
+                    >
+                      Send
+                    </button>
+                  </div>
+                  <button
+                    onClick={endChat}
+                    className="text-xs text-red-600 hover:text-red-800 mt-2"
+                  >
+                    End Chat
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
