@@ -1,53 +1,37 @@
 'use client'
 
-import { DashboardProvider, useDashboardContext } from '@/context/DashboardContext'
-import { Header } from '@/components/dashboard/Header'
-import { Sidebar } from '@/components/dashboard/Sidebar'
-import { DashboardFooter } from '@/components/dashboard/Footer'
-import { OTPModal } from '@/components/dashboard/otp/OTPModal'
-import { requestOTP, verifyOTP } from '@/lib/otp/otpUtils'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
-import { 
-  updateUserProfile, 
-  changePassword, 
-  toggleTwoFactor, 
-  updateNotificationPreferences,
-  updateAvatar,
-  addUserNotification
-} from '@/lib/auth/authService'
+import { updateUserProfile, changePassword, toggleTwoFactor, updateNotificationPreferences, updateAvatar, addUserNotification } from '@/lib/auth/authService'
+import { requestOTP, verifyOTP } from '@/lib/otp/otpService'
+import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
+
+export default function AccountPage() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <AccountContent />
+    </div>
+  )
+}
 
 function AccountContent() {
-  const { user, refreshUser } = useDashboardContext()
-  const { user: authUser } = useAuth()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  
+  const router = useRouter()
+  const { user, setUser } = useAuth()
   const [activeTab, setActiveTab] = useState('profile')
-  const [showOTP, setShowOTP] = useState(false)
-  const [otpRequestId, setOtpRequestId] = useState('')
   const [isEditing, setIsEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [sidebarState, setSidebarState] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
+  const [otpRequestId, setOtpRequestId] = useState<string | null>(null)
+  const [otpCode, setOtpCode] = useState('')
+  const [showOtpModal, setShowOtpModal] = useState(false)
+  const [pendingAction, setPendingAction] = useState<{
+    type: 'profile' | 'password' | '2fa' | 'notifications' | 'avatar'
+    data?: any
+  } | null>(null)
   
-  // Password change states
-  const [showChangePassword, setShowChangePassword] = useState(false)
-  const [passwordData, setPasswordData] = useState({
-    current: '',
-    new: '',
-    confirm: ''
-  })
-  const [passwordError, setPasswordError] = useState('')
-  const [passwordSuccess, setPasswordSuccess] = useState('')
-  
-  // 2FA state
-  const [twoFAEnabled, setTwoFAEnabled] = useState(false)
-  
-  // Notification preferences
-  const [preferences, setPreferences] = useState({
-    email: true,
-    sms: false,
-    push: true
-  })
-  
-  // Edit form state
   const [editForm, setEditForm] = useState({
     firstName: '',
     lastName: '',
@@ -55,532 +39,699 @@ function AccountContent() {
     phone: ''
   })
   
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+  
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    email: true,
+    push: true,
+    sms: false
+  })
+  
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
+  // Initialize form with user data
   useEffect(() => {
-    const handleSidebarChange = (e: CustomEvent) => {
-      setSidebarCollapsed(e.detail.collapsed)
-
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024)
-
-    window.addEventListener('sidebarChange' as any, handleSidebarChange)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-
-    // Load user data into edit form
     if (user) {
+      const nameParts = user.name?.split(' ') || ['', '']
       setEditForm({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
         email: user.email || '',
         phone: user.phone || ''
+      })
+      setTwoFactorEnabled(user.twoFactorEnabled || false)
+      if (user.notificationPreferences) {
+        setNotificationPrefs(user.notificationPreferences)
       }
+    }
+  }, [user])
 
+  useEffect(() => {
+    const handleSidebarChange = () => {
+      setSidebarState(Date.now())
+    }
+    
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    window.addEventListener('sidebarChange' as any, handleSidebarChange)
+    window.addEventListener('resize', checkMobile)
+    checkMobile()
+    
     return () => {
       window.removeEventListener('sidebarChange' as any, handleSidebarChange)
       window.removeEventListener('resize', checkMobile)
+    }
+  }, [])
 
-  }, [user])
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setEditForm(prev => ({ ...prev, [name]: value }))
+  }
 
-  if (!authUser) {
-    return null
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setPasswordForm(prev => ({ ...prev, [name]: value }))
+  }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1e3a5f]"></div>
-      </div>
-    )
+  const handleNotificationChange = (key: keyof typeof notificationPrefs) => {
+    setNotificationPrefs(prev => ({ ...prev, [key]: !prev[key] }))
+  }
 
-  const tabs = [
-    { id: 'profile', name: 'Profile', icon: '👤' },
-    { id: 'security', name: 'Security', icon: '🔒' },
-    { id: 'preferences', name: 'Preferences', icon: '⚙️' },
-  ]
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setAvatarFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
-  const handleOTPRequest = async (action: string) => {
-    const response = await requestOTP(user?.phone || '1234567890', action)
-    if (response.success && response.requestId) {
-      setOtpRequestId(response.requestId)
-      setShowOTP(true)
-
-
-  const handleOTPVerify = async (code: string): Promise<boolean> => {
-    if (code === 'RESEND') {
-      const response = await requestOTP(user?.phone || '1234567890', 'account update')
-      if (response.requestId) {
-        setOtpRequestId(response.requestId)
-      return true
-
-    const isValid = await verifyOTP(otpRequestId, code)
-    
-    if (isValid) {
-      // If we were changing password, save it
-      if (showChangePassword) {
-        handlePasswordChange()
-      if (isEditing) {
-        handleSaveProfile()
-      setShowChangePassword(false)
-      setIsEditing(false)
-
-    return isValid
-
-  const handleSaveProfile = () => {
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     if (!user) return
     
-    const updated = updateUserProfile({ id: user.id,
-      name: `${editForm.firstName} ${editForm.lastName}`.trim(),
-      email: editForm.email,
-    })
+    setIsLoading(true)
     
-    // Profile updated successfully
-    addUserNotification(user.id, {
+    try {
+      const updated = await updateUserProfile({
+        id: user.id,
+        name: `${editForm.firstName} ${editForm.lastName}`.trim(),
+        email: editForm.email
+      })
+      
       addUserNotification(user.id, {
         title: '✅ Profile Updated',
         message: 'Your profile information has been successfully updated.',
         type: 'success'
-      refreshUser()
+      })
+      
+      setUser(updated)
+      setIsEditing(false)
+      setMessage({ type: 'success', text: 'Profile updated successfully!' })
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-
-  const handlePasswordChange = () => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     if (!user) return
     
-    // Validate
-    if (passwordData.new !== passwordData.confirm) {
-      setPasswordError('New passwords do not match')
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setMessage({ type: 'error', text: 'New passwords do not match.' })
       return
-
-    if (passwordData.new.length < 6) {
-      setPasswordError('Password must be at least 6 characters')
-      return
-
-    const result = changePassword(user.id, passwordData.current, passwordData.new)
+    }
     
-    if (result.success) {
-      setPasswordSuccess('Password changed successfully!')
-      setPasswordError('')
-      setPasswordData({ current: '', new: '', confirm: '' })
-      
+    setIsLoading(true)
+    
+    try {
+      const success = await changePassword(passwordForm.currentPassword, passwordForm.newPassword)
+      if (success) {
+        addUserNotification(user.id, {
+          title: '🔐 Password Changed',
+          message: 'Your password has been successfully updated.',
+          type: 'success'
+        })
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+        setMessage({ type: 'success', text: 'Password changed successfully!' })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to change password. Please try again.' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleTwoFactorToggle = async () => {
+    if (!user) return
+    
+    setIsLoading(true)
+    
+    try {
+      const response = await requestOTP(user.phone || '1234567890', '2fa')
+      if (response.requestId) {
+        setOtpRequestId(response.requestId)
+        setPendingAction({ type: '2fa', data: !twoFactorEnabled })
+        setShowOtpModal(true)
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to request OTP. Please try again.' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleNotificationSubmit = async () => {
+    if (!user) return
+    
+    setIsLoading(true)
+    
+    try {
+      const updated = await updateNotificationPreferences(notificationPrefs)
       addUserNotification(user.id, {
-        title: '🔐 Password Changed',
-        message: 'Your password has been successfully updated.',
+        title: '⚙️ Preferences Updated',
+        message: 'Your notification preferences have been saved.',
         type: 'success'
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setPasswordSuccess(''), 3000)
-    } else {
-      setPasswordError(result.message)
+      })
+      setMessage({ type: 'success', text: 'Notification preferences updated!' })
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to update preferences.' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-
-  const handleToggle2FA = () => {
-    if (!user) return
+  const handleAvatarSubmit = async () => {
+    if (!user || !avatarFile) return
     
-    const newState = !twoFAEnabled
-    const result = toggleTwoFactor(user.id, newState)
+    setIsLoading(true)
     
-    if (result.success) {
-      setTwoFAEnabled(newState)
-
-
-  const handleTogglePreference = (key: keyof typeof preferences) => {
-    if (!user) return
-    
-    const newPrefs = {
-      ...preferences,
-      [key]: !preferences[key]
-
-    setPreferences(newPrefs)
-    
-    updateNotificationPreferences(user.id, newPrefs)
-    
-    addUserNotification(user.id, {
-      title: '⚙️ Preferences Updated',
-      message: `Notification preferences have been updated.`,
-      type: 'info'
-    })
-
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !user) return
-    
-    // In a real app, you'd upload to a server
-    // For demo, we'll create a local object URL
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const avatarUrl = reader.result as string
-      updateAvatar(user.id, avatarUrl)
-      
+    try {
+      const result = await updateAvatar(avatarFile)
       addUserNotification(user.id, {
         title: '🖼️ Avatar Updated',
         message: 'Your profile picture has been changed.',
         type: 'success'
-      
-      refreshUser()
+      })
+      setMessage({ type: 'success', text: 'Avatar updated successfully!' })
+      setAvatarFile(null)
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to update avatar.' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-    reader.readAsDataURL(file)
+  const handleOtpVerify = async () => {
+    if (!otpRequestId || !pendingAction || !user) return
+    
+    setIsLoading(true)
+    
+    try {
+      const isValid = await verifyOTP(otpRequestId, otpCode)
+      if (isValid) {
+        if (pendingAction.type === '2fa') {
+          const newState = await toggleTwoFactor(pendingAction.data)
+          setTwoFactorEnabled(newState)
+          addUserNotification(user.id, {
+            title: newState ? '🔒 Two-Factor Enabled' : '🔓 Two-Factor Disabled',
+            message: newState ? 'Your account is now more secure.' : 'Two-factor authentication has been turned off.',
+            type: 'success'
+          })
+        }
+        setShowOtpModal(false)
+        setOtpCode('')
+        setPendingAction(null)
+        setMessage({ type: 'success', text: 'Verification successful!' })
+      } else {
+        setMessage({ type: 'error', text: 'Invalid OTP code.' })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Verification failed.' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Not Logged In</h2>
+          <p className="text-gray-600 mb-6">Please sign in to view your account settings.</p>
+          <Link href="/auth/login" className="bg-deep-teal text-white px-6 py-3 rounded-lg hover:bg-soft-gold transition-colors">
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      <Sidebar />
-      <div className={`flex-1 transition-all duration-300 flex flex-col ${
-        !isMobile && (sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64')
-        <Header />
-        <main className="flex-1 pt-20 lg:pt-24 px-4 lg:px-6 pb-6">
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl lg:text-3xl font-bold text-[#1e3a5f]">Account Settings</h1>
-            <p className="text-sm lg:text-base text-gray-600 mt-1">Manage your profile and preferences</p>
-          </div>
+    <div className={`p-4 md:p-8 transition-all duration-300 ${isMobile ? 'ml-0' : 'ml-64'}`}>
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold text-deep-teal mb-2">Account Settings</h1>
+        <p className="text-gray-600 mb-8">Manage your profile, security, and preferences</p>
 
-          {/* Profile Overview Card */}
-          <div className="bg-white rounded-xl lg:rounded-2xl shadow-lg p-4 lg:p-6 mb-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center space-x-3 lg:space-x-4">
-                <div className="relative group">
-                  <img
-                    src={user?.avatar || '/assets/img/avatars/default-avatar.svg'}
-                    alt={user?.accountName}
-                    className="w-16 h-16 lg:w-20 lg:h-20 rounded-full border-4 border-[#1e3a5f] object-cover"
-                  />
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+            {message.text}
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 mb-8 overflow-x-auto">
+          {[
+            { id: 'profile', label: 'Profile', icon: '👤' },
+            { id: 'security', label: 'Security', icon: '🔒' },
+            { id: 'notifications', label: 'Notifications', icon: '🔔' },
+            { id: 'appearance', label: 'Appearance', icon: '🎨' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all duration-300 border-b-2 ${
+                activeTab === tab.id
+                  ? 'border-soft-gold text-deep-teal'
+                  : 'border-transparent text-gray-500 hover:text-deep-teal'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Profile Tab */}
+        {activeTab === 'profile' && (
+          <ScrollAnimation animation="fadeIn">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-deep-teal">Profile Information</h2>
+                {!isEditing && (
                   <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-0 right-0 bg-[#e68a2e] text-white p-1.5 lg:p-2 rounded-full hover:bg-[#f5a344] transition opacity-0 group-hover:opacity-100"
+                    onClick={() => setIsEditing(true)}
+                    className="text-soft-gold hover:text-deep-teal transition-colors flex items-center gap-2"
                   >
-                    <svg className="w-3 h-3 lg:w-4 lg:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
+                    Edit Profile
                   </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleAvatarChange}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                </div>
-                <div>
-                  <h2 className="text-lg lg:text-xl font-bold text-gray-900">{user?.accountName}</h2>
-                  <p className="text-xs lg:text-sm text-gray-500 capitalize">{user?.accountStatus}</p>
-                  <p className="text-xs text-gray-400 mt-1">Member since {new Date(user?.createdAt).toLocaleDateString()}</p>
-                </div>
+                )}
               </div>
-              <button
-                onClick={() => {
-                  setIsEditing(!isEditing)
-                  if (!isEditing) {
-                    setEditForm({
-                      firstName: user.firstName || '',
-                      lastName: user.lastName || '',
-                      email: user.email || '',
-                      phone: user.phone || ''
-                    })
 
-                }}
-                className="px-4 lg:px-6 py-2 text-sm lg:text-base border-2 border-[#1e3a5f] text-[#1e3a5f] rounded-lg lg:rounded-xl font-semibold hover:bg-[#1e3a5f] hover:text-white transition"
-              >
-                {isEditing ? 'Cancel' : 'Edit Profile'}
-              </button>
+              {isEditing ? (
+                <form onSubmit={handleProfileSubmit} className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={editForm.firstName}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={editForm.lastName}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={editForm.email}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone (for 2FA)</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={editForm.phone}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="bg-deep-teal text-white px-6 py-2 rounded-lg hover:bg-soft-gold transition-colors disabled:opacity-50"
+                    >
+                      {isLoading ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditing(false)
+                        if (user) {
+                          const nameParts = user.name?.split(' ') || ['', '']
+                          setEditForm({
+                            firstName: nameParts[0] || '',
+                            lastName: nameParts.slice(1).join(' ') || '',
+                            email: user.email || '',
+                            phone: user.phone || ''
+                          })
+                        }
+                      }}
+                      className="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">First Name</p>
+                      <p className="font-medium">{editForm.firstName || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Last Name</p>
+                      <p className="font-medium">{editForm.lastName || 'Not set'}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-medium">{user.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Phone</p>
+                    <p className="font-medium">{editForm.phone || 'Not set'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Account Type</p>
+                    <p className="font-medium capitalize">{user.role?.toLowerCase() || 'user'}</p>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          </ScrollAnimation>
+        )}
 
-          {/* Tabs */}
-          <div className="bg-white rounded-xl lg:rounded-2xl shadow-lg">
-            <div className="border-b border-gray-200 overflow-x-auto">
-              <nav className="flex space-x-4 lg:space-x-8 px-4 lg:px-6" aria-label="Tabs">
-                {tabs.map((tab) => (
+        {/* Security Tab */}
+        {activeTab === 'security' && (
+          <ScrollAnimation animation="fadeIn">
+            <div className="space-y-6">
+              {/* Change Password */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h2 className="text-xl font-semibold text-deep-teal mb-4">Change Password</h2>
+                <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                    <input
+                      type="password"
+                      name="currentPassword"
+                      value={passwordForm.currentPassword}
+                      onChange={handlePasswordChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <input
+                      type="password"
+                      name="newPassword"
+                      value={passwordForm.newPassword}
+                      onChange={handlePasswordChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                      required
+                      minLength={8}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={passwordForm.confirmPassword}
+                      onChange={handlePasswordChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                      required
+                    />
+                  </div>
                   <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`py-3 lg:py-4 px-1 border-b-2 font-medium text-xs lg:text-sm whitespace-nowrap transition ${
-                      activeTab === tab.id
-                        ? 'border-[#1e3a5f] text-[#1e3a5f]'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    type="submit"
+                    disabled={isLoading}
+                    className="bg-deep-teal text-white px-6 py-2 rounded-lg hover:bg-soft-gold transition-colors disabled:opacity-50"
+                  >
+                    {isLoading ? 'Updating...' : 'Update Password'}
+                  </button>
+                </form>
+              </div>
+
+              {/* Two-Factor Authentication */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl font-semibold text-deep-teal">Two-Factor Authentication</h2>
+                    <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+                  </div>
+                  <button
+                    onClick={handleTwoFactorToggle}
+                    disabled={isLoading}
+                    className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none ${
+                      twoFactorEnabled ? 'bg-soft-gold' : 'bg-gray-300'
                     }`}
                   >
-                    <span className="mr-1 lg:mr-2">{tab.icon}</span>
-                    {tab.name}
+                    <span
+                      className={`inline-block w-4 h-4 transform transition-transform bg-white rounded-full ${
+                        twoFactorEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
                   </button>
-                ))}
-              </nav>
+                </div>
+                <p className="text-sm text-gray-600">
+                  {twoFactorEnabled 
+                    ? 'Two-factor authentication is enabled. You\'ll need a verification code from your authenticator app or SMS to sign in.' 
+                    : 'Enable two-factor authentication to protect your account with an additional verification step.'}
+                </p>
+              </div>
+
+              {/* Active Sessions */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h2 className="text-xl font-semibold text-deep-teal mb-4">Active Sessions</h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-soft-gold/20 rounded-full flex items-center justify-center">
+                        <span className="text-xl">💻</span>
+                      </div>
+                      <div>
+                        <p className="font-medium">Current Session</p>
+                        <p className="text-sm text-gray-500">Windows • Chrome • IP: 192.168.1.1</p>
+                      </div>
+                    </div>
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Active Now</span>
+                  </div>
+                </div>
+              </div>
             </div>
+          </ScrollAnimation>
+        )}
 
-            <div className="p-4 lg:p-6">
-              {/* Profile Tab */}
-              {activeTab === 'profile' && (
-                <div className="space-y-4 lg:space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                    <div>
-                      <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">
-                        First Name
-                      </label>
-                      <input
-                        type="text"
-                        value={isEditing ? editForm.firstName : user?.firstName || ''}
-                        onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
-                        disabled={!isEditing}
-                        className="w-full px-3 lg:px-4 py-2 text-sm lg:text-base border-2 border-gray-200 rounded-lg lg:rounded-xl focus:outline-none focus:border-[#1e3a5f] transition disabled:bg-gray-50 disabled:text-gray-500"
-                      />
+        {/* Notifications Tab */}
+        {activeTab === 'notifications' && (
+          <ScrollAnimation animation="fadeIn">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-deep-teal mb-4">Notification Preferences</h2>
+              <p className="text-sm text-gray-500 mb-6">Choose how you want to receive notifications</p>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 text-xl">📧</span>
                     </div>
                     <div>
-                      <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">
-                        Last Name
-                      </label>
-                      <input
-                        type="text"
-                        value={isEditing ? editForm.lastName : user?.lastName || ''}
-                        onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
-                        disabled={!isEditing}
-                        className="w-full px-3 lg:px-4 py-2 text-sm lg:text-base border-2 border-gray-200 rounded-lg lg:rounded-xl focus:outline-none focus:border-[#1e3a5f] transition disabled:bg-gray-50 disabled:text-gray-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        value={isEditing ? editForm.email : user?.email || ''}
-                        onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                        disabled={!isEditing}
-                        className="w-full px-3 lg:px-4 py-2 text-sm lg:text-base border-2 border-gray-200 rounded-lg lg:rounded-xl focus:outline-none focus:border-[#1e3a5f] transition disabled:bg-gray-50 disabled:text-gray-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs lg:text-sm font-medium text-gray-700 mb-1 lg:mb-2">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        value={isEditing ? editForm.phone : user?.phone || ''}
-                        onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-                        disabled={!isEditing}
-                        className="w-full px-3 lg:px-4 py-2 text-sm lg:text-base border-2 border-gray-200 rounded-lg lg:rounded-xl focus:outline-none focus:border-[#1e3a5f] transition disabled:bg-gray-50 disabled:text-gray-500"
-                      />
+                      <p className="font-medium">Email Notifications</p>
+                      <p className="text-sm text-gray-500">Receive updates via email</p>
                     </div>
                   </div>
-
-                  {isEditing && (
-                    <div className="flex justify-end space-x-3">
-                      <button
-                        onClick={() => setIsEditing(false)}
-                        className="px-4 lg:px-6 py-2 text-sm lg:text-base border-2 border-gray-300 rounded-lg lg:rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => handleOTPRequest('profile update')}
-                        className="px-4 lg:px-6 py-2 text-sm lg:text-base bg-[#1e3a5f] text-white rounded-lg lg:rounded-xl font-semibold hover:bg-[#2b4c7a] transition"
-                      >
-                        Save Changes
-                      </button>
-                    </div>
-                  )}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notificationPrefs.email}
+                      onChange={() => handleNotificationChange('email')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-soft-gold rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-soft-gold"></div>
+                  </label>
                 </div>
-              )}
 
-              {/* Security Tab */}
-              {activeTab === 'security' && (
-                <div className="space-y-4 lg:space-y-6">
-                  {/* Password Change Section */}
-                  <div className="p-3 lg:p-4 bg-gray-50 rounded-lg lg:rounded-xl">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-sm lg:text-base font-semibold text-gray-900">Password</h3>
-                        <p className="text-xs text-gray-500">Change your password regularly</p>
-                      </div>
-                      <button
-                        onClick={() => setShowChangePassword(!showChangePassword)}
-                        className="text-xs lg:text-sm text-[#1e3a5f] font-semibold hover:text-[#2b4c7a] transition"
-                      >
-                        {showChangePassword ? 'Cancel' : 'Change'}
-                      </button>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                      <span className="text-purple-600 text-xl">📱</span>
                     </div>
+                    <div>
+                      <p className="font-medium">Push Notifications</p>
+                      <p className="text-sm text-gray-500">Real-time alerts in your browser</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notificationPrefs.push}
+                      onChange={() => handleNotificationChange('push')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-soft-gold rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-soft-gold"></div>
+                  </label>
+                </div>
 
-                    {showChangePassword && (
-                      <div className="space-y-3 mt-4">
-                        {passwordSuccess && (
-                          <div className="p-2 bg-green-50 border border-green-200 rounded-lg">
-                            <p className="text-xs text-green-600">{passwordSuccess}</p>
-                          </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <span className="text-green-600 text-xl">💬</span>
+                    </div>
+                    <div>
+                      <p className="font-medium">SMS Notifications</p>
+                      <p className="text-sm text-gray-500">Text messages for important alerts</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={notificationPrefs.sms}
+                      onChange={() => handleNotificationChange('sms')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-soft-gold rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-soft-gold"></div>
+                  </label>
+                </div>
+
+                <button
+                  onClick={handleNotificationSubmit}
+                  disabled={isLoading}
+                  className="mt-4 bg-deep-teal text-white px-6 py-2 rounded-lg hover:bg-soft-gold transition-colors disabled:opacity-50"
+                >
+                  {isLoading ? 'Saving...' : 'Save Preferences'}
+                </button>
+              </div>
+            </div>
+          </ScrollAnimation>
+        )}
+
+        {/* Appearance Tab */}
+        {activeTab === 'appearance' && (
+          <ScrollAnimation animation="fadeIn">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-deep-teal mb-4">Appearance</h2>
+              
+              <div className="space-y-6">
+                {/* Avatar Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">Profile Picture</label>
+                  <div className="flex items-center gap-6">
+                    <div className="relative">
+                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-deep-teal to-sage flex items-center justify-center text-white text-3xl font-bold overflow-hidden">
+                        {avatarPreview ? (
+                          <img src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover" />
+                        ) : user.avatar ? (
+                          <img src={user.avatar} alt="Current avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          user.name?.charAt(0) || 'U'
                         )}
-                        {passwordError && (
-                          <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-xs text-red-600">{passwordError}</p>
-                          </div>
-                        )}
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Current Password
-                          </label>
-                          <input
-                            type="password"
-                            value={passwordData.current}
-                            onChange={(e) => setPasswordData({...passwordData, current: e.target.value})}
-                            className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#1e3a5f] transition"
-                            placeholder="Enter current password"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            New Password
-                          </label>
-                          <input
-                            type="password"
-                            value={passwordData.new}
-                            onChange={(e) => setPasswordData({...passwordData, new: e.target.value})}
-                            className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#1e3a5f] transition"
-                            placeholder="Enter new password"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Confirm New Password
-                          </label>
-                          <input
-                            type="password"
-                            value={passwordData.confirm}
-                            onChange={(e) => setPasswordData({...passwordData, confirm: e.target.value})}
-                            className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:outline-none focus:border-[#1e3a5f] transition"
-                            placeholder="Confirm new password"
-                          />
-                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-soft-gold/20 file:text-deep-teal hover:file:bg-soft-gold/30"
+                      />
+                      <p className="text-xs text-gray-500 mt-2">Recommended: Square image, at least 200x200px</p>
+                      {avatarFile && (
                         <button
-                          onClick={() => handleOTPRequest('password change')}
-                          disabled={!passwordData.current || !passwordData.new || !passwordData.confirm}
-                          className="w-full mt-2 px-4 py-2 bg-[#1e3a5f] text-white rounded-lg text-sm font-medium hover:bg-[#2b4c7a] transition disabled:opacity-50"
+                          onClick={handleAvatarSubmit}
+                          disabled={isLoading}
+                          className="mt-3 bg-deep-teal text-white px-4 py-2 rounded-lg text-sm hover:bg-soft-gold transition-colors disabled:opacity-50"
                         >
-                          Update Password
+                          {isLoading ? 'Uploading...' : 'Upload New Avatar'}
                         </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Two-Factor Authentication */}
-                  <div className="p-3 lg:p-4 bg-gray-50 rounded-lg lg:rounded-xl">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-sm lg:text-base font-semibold text-gray-900">Two-Factor Authentication</h3>
-                        <p className="text-xs text-gray-500">Add an extra layer of security to your account</p>
-                      </div>
-                      <button
-                        onClick={handleToggle2FA}
-                        className={`px-3 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm rounded-lg transition ${
-                          twoFAEnabled 
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                            : 'bg-[#1e3a5f] text-white hover:bg-[#2b4c7a]'
-                        }`}
-                      >
-                        {twoFAEnabled ? '✅ Enabled' : 'Enable 2FA'}
-                      </button>
+                      )}
                     </div>
-                    {twoFAEnabled && (
-                      <p className="text-xs text-green-600 mt-2">
-                        Two-factor authentication is active. Your account is extra secure.
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Login History Preview */}
-                  <div className="p-3 lg:p-4 bg-gray-50 rounded-lg lg:rounded-xl">
-                    <h3 className="text-sm lg:text-base font-semibold text-gray-900 mb-2">Recent Login</h3>
-                    <p className="text-xs text-gray-600">
-                      Last login: {new Date(user?.lastLogin).toLocaleString()}
-                    </p>
                   </div>
                 </div>
-              )}
 
-              {/* Preferences Tab */}
-              {activeTab === 'preferences' && (
-                <div className="space-y-4 lg:space-y-6">
-                  {/* Email Notifications */}
-                  <div className="flex items-center justify-between p-3 lg:p-4 bg-gray-50 rounded-lg lg:rounded-xl">
-                    <div>
-                      <h3 className="text-sm lg:text-base font-semibold text-gray-900">Email Notifications</h3>
-                      <p className="text-xs text-gray-500">Receive transaction alerts and updates via email</p>
-                    </div>
-                    <button
-                      onClick={() => handleTogglePreference('email')}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                        preferences.email ? 'bg-[#1e3a5f]' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          preferences.email ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
+                {/* Theme Preference (placeholder) */}
+                <div className="pt-4 border-t border-gray-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">Theme</label>
+                  <div className="flex gap-3">
+                    <button className="flex-1 p-4 border-2 border-deep-teal rounded-lg bg-deep-teal/5 text-deep-teal font-medium">
+                      Light
+                    </button>
+                    <button className="flex-1 p-4 border-2 border-gray-200 rounded-lg text-gray-500 hover:border-deep-teal transition-colors">
+                      Dark
+                    </button>
+                    <button className="flex-1 p-4 border-2 border-gray-200 rounded-lg text-gray-500 hover:border-deep-teal transition-colors">
+                      System
                     </button>
                   </div>
-
-                  {/* SMS Notifications */}
-                  <div className="flex items-center justify-between p-3 lg:p-4 bg-gray-50 rounded-lg lg:rounded-xl">
-                    <div>
-                      <h3 className="text-sm lg:text-base font-semibold text-gray-900">SMS Alerts</h3>
-                      <p className="text-xs text-gray-500">Get text messages for large transactions and security alerts</p>
-                    </div>
-                    <button
-                      onClick={() => handleTogglePreference('sms')}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                        preferences.sms ? 'bg-[#1e3a5f]' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          preferences.sms ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Push Notifications */}
-                  <div className="flex items-center justify-between p-3 lg:p-4 bg-gray-50 rounded-lg lg:rounded-xl">
-                    <div>
-                      <h3 className="text-sm lg:text-base font-semibold text-gray-900">Push Notifications</h3>
-                      <p className="text-xs text-gray-500">Receive real-time notifications in your browser</p>
-                    </div>
-                    <button
-                      onClick={() => handleTogglePreference('push')}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                        preferences.push ? 'bg-[#1e3a5f]' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          preferences.push ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  <p className="text-xs text-gray-400 mt-4">
-                    Changes to your preferences are saved automatically.
-                  </p>
                 </div>
-              )}
+              </div>
+            </div>
+          </ScrollAnimation>
+        )}
+
+        {/* OTP Modal */}
+        {showOtpModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+              <h3 className="text-xl font-bold text-deep-teal mb-2">Verify Your Identity</h3>
+              <p className="text-gray-600 mb-4">Enter the verification code sent to your phone.</p>
+              
+              <input
+                type="text"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                placeholder="Enter 6-digit code"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent mb-4 text-center text-2xl tracking-widest"
+                maxLength={6}
+              />
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={handleOtpVerify}
+                  disabled={isLoading || otpCode.length !== 6}
+                  className="flex-1 bg-deep-teal text-white py-3 rounded-lg hover:bg-soft-gold transition-colors disabled:opacity-50"
+                >
+                  {isLoading ? 'Verifying...' : 'Verify'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowOtpModal(false)
+                    setOtpCode('')
+                    setPendingAction(null)
+                  }}
+                  className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
-        </main>
-        <DashboardFooter />
+        )}
       </div>
-
-      {/* OTP Modal */}
-      <OTPModal
-        isOpen={showOTP}
-        onClose={() => setShowOTP(false)}
-        onVerify={handleOTPVerify}
-        phoneNumber={user?.phone || '****'}
-        purpose="verify changes"
-      />
     </div>
   )
-
-export default function AccountPage() {
-  return (
-    <DashboardProvider>
-      <AccountContent />
-    </DashboardProvider>
-  )
+}
