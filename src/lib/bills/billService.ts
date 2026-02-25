@@ -1,257 +1,182 @@
-import { Biller, ScheduledBill, BillPayment, RecurringBill } from '@/types/bills'
-import { addUserNotification } from '@/lib/auth/authService'
+export interface Bill {
+  id: string
+  userId: string
+  billerName: string
+  accountNumber: string
+  amount: number
+  dueDate: string
+  category: string
+  status: 'pending' | 'paid' | 'overdue' | 'scheduled' | 'cancelled'
+  autoPay: boolean
+  paymentMethod?: 'card' | 'bank'
+  notes?: string
+  createdAt: string
+  updatedAt: string
+}
 
-// Mock billers
-export const billers: Biller[] = [
-  {
-    id: 'biller1',
-    name: 'Electric Company',
-    category: 'utilities',
-    logo: '⚡',
-    accountNumberPattern: 'Account number on your bill',
-    paymentMethods: ['bank', 'card']
-  },
-  {
-    id: 'biller2',
-    name: 'Water Works',
-    category: 'utilities',
-    logo: '💧',
-    accountNumberPattern: 'Customer ID on your bill',
-    paymentMethods: ['bank']
-  },
-  {
-    id: 'biller3',
-    name: 'Gas Supply Co',
-    category: 'utilities',
-    logo: '🔥',
-    accountNumberPattern: 'Account number',
-    paymentMethods: ['bank', 'card']
-  },
-  {
-    id: 'biller4',
-    name: 'Verizon Wireless',
-    category: 'phone',
-    logo: '📱',
-    accountNumberPattern: 'Phone number',
-    paymentMethods: ['bank', 'card']
-  },
-  {
-    id: 'biller5',
-    name: 'AT&T',
-    category: 'phone',
-    logo: '📞',
-    accountNumberPattern: 'Account number',
-    paymentMethods: ['bank', 'card']
-  },
-  {
-    id: 'biller6',
-    name: 'Comcast Xfinity',
-    category: 'internet',
-    logo: '🌐',
-    accountNumberPattern: 'Account number',
-    paymentMethods: ['bank']
-  },
-  {
-    id: 'biller7',
-    name: 'Netflix',
-    category: 'streaming',
-    logo: '🎬',
-    accountNumberPattern: 'Email address',
-    paymentMethods: ['card']
-  },
-  {
-    id: 'biller8',
-    name: 'Spotify',
-    category: 'streaming',
-    logo: '🎵',
-    accountNumberPattern: 'Username',
-    paymentMethods: ['card']
-  },
-  {
-    id: 'biller9',
-    name: 'State Farm Insurance',
-    category: 'insurance',
-    logo: '🛡️',
-    accountNumberPattern: 'Policy number',
-    paymentMethods: ['bank', 'card']
-  },
-  {
-    id: 'biller10',
-    name: 'Capital One',
-    category: 'credit',
-    logo: '💳',
-    accountNumberPattern: 'Credit card number',
-    paymentMethods: ['bank']
-  }
-]
+export interface BillPayment {
+  id: string
+  userId: string
+  billId: string
+  billerName: string
+  amount: number
+  accountNumber: string
+  status: 'completed' | 'pending' | 'failed'
+  paymentMethod: 'card' | 'bank'
+  paidAt: string
+}
 
-// Load scheduled bills from localStorage
-export const loadScheduledBills = (userId: string): ScheduledBill[] => {
-  if (typeof window === 'undefined') return []
+// Mock data store
+let bills: Bill[] = []
+let payments: BillPayment[] = []
+
+// Load bills from localStorage or use default
+const loadBills = (userId: string): Bill[] => {
+  // In a real app, this would be an API call
+  const defaultBills: Bill[] = [
+    {
+      id: '1',
+      userId,
+      billerName: 'Electric Company',
+      accountNumber: '****1234',
+      amount: 145.67,
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      category: 'Utilities',
+      status: 'pending',
+      autoPay: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: '2',
+      userId,
+      billerName: 'Water Works',
+      accountNumber: '****5678',
+      amount: 89.50,
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      category: 'Utilities',
+      status: 'pending',
+      autoPay: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: '3',
+      userId,
+      billerName: 'Internet Provider',
+      accountNumber: '****9012',
+      amount: 79.99,
+      dueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      category: 'Internet',
+      status: 'overdue',
+      autoPay: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  ]
   
-  const key = `bills_${userId}`
-  const stored = localStorage.getItem(key)
-  if (stored) {
-    return JSON.parse(stored)
-  }
-  return []
+  return defaultBills
 }
 
-// Save scheduled bills
-export const saveScheduledBills = (userId: string, bills: ScheduledBill[]) => {
-  if (typeof window === 'undefined') return
-  const key = `bills_${userId}`
-  localStorage.setItem(key, JSON.stringify(bills))
+export const getUserBills = (userId: string): Bill[] => {
+  return loadBills(userId)
 }
 
-// Schedule a new bill
-export const scheduleBill = (
-  userId: string,
-  billerId: string,
-  accountNumber: string,
-  amount: number,
-  dueDate: string,
-  paymentMethod: 'bank' | 'card',
-  autoPay: boolean = false,
-  reminderDays: number = 3
-): ScheduledBill => {
-  const biller = billers.find(b => b.id === billerId)
-  if (!biller) throw new Error('Biller not found')
+export const getBillById = (billId: string): Bill | undefined => {
+  return bills.find(b => b.id === billId)
+}
 
-  const newBill: ScheduledBill = {
-    id: `bill_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    userId,
-    billerId,
-    billerName: biller.name,
-    billerLogo: biller.logo,
-    accountNumber,
-    amount,
-    dueDate,
-    status: 'pending',
-    paymentMethod,
-    autoPay,
-    reminderDays,
-    createdAt: new Date().toISOString()
+export const createBill = (bill: Omit<Bill, 'id' | 'createdAt' | 'updatedAt'>): Bill => {
+  const newBill: Bill = {
+    ...bill,
+    id: `bill_${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
-
-  const bills = loadScheduledBills(userId)
   bills.push(newBill)
-  saveScheduledBills(userId, bills)
-
-  // Set reminder notification
-  const dueDateObj = new Date(dueDate)
-  const reminderDate = new Date(dueDateObj)
-  reminderDate.setDate(reminderDate.getDate() - reminderDays)
-
-  // Add notification
-  addUserNotification(userId, {
-    title: '📅 Bill Scheduled',
-    message: `Your ${biller.name} bill of $${amount.toFixed(2)} has been scheduled for ${new Date(dueDate).toLocaleDateString()}`,
-    type: 'info'
-  })
-
   return newBill
 }
 
-// Pay a bill
-export const payBill = (
-  userId: string,
-  billId: string,
-  userBalance: number
-): { success: boolean; newBalance: number; message: string } => {
-  const bills = loadScheduledBills(userId)
-  const billIndex = bills.findIndex(b => b.id === billId)
-
-  if (billIndex === -1) {
-    return { success: false, newBalance: userBalance, message: 'Bill not found' }
-  }
-
-  const bill = bills[billIndex]
-
-  if (bill.status === 'paid') {
-    return { success: false, newBalance: userBalance, message: 'Bill already paid' }
-  }
-
-  if (userBalance < bill.amount) {
-    return { success: false, newBalance: userBalance, message: 'Insufficient funds' }
-  }
-
-  // Update bill status
-  bills[billIndex].status = 'paid'
-  bills[billIndex].paidAt = new Date().toISOString()
-  saveScheduledBills(userId, bills)
-
-  const newBalance = userBalance - bill.amount
-
-  // Add notification
-  addUserNotification(userId, {
-    title: '✅ Bill Paid',
-    message: `Your payment of $${bill.amount.toFixed(2)} to ${bill.billerName} was successful.`,
-    type: 'success'
-  })
-
-  return {
-    success: true,
-    newBalance,
-    message: 'Bill paid successfully'
-  }
+export const updateBill = (billId: string, updates: Partial<Bill>): Bill | undefined => {
+  const index = bills.findIndex(b => b.id === billId)
+  if (index === -1) return undefined
+  
+  bills[index] = { ...bills[index], ...updates, updatedAt: new Date().toISOString() }
+  return bills[index]
 }
 
-// Cancel scheduled bill
-export const cancelBill = (userId: string, billId: string): boolean => {
-  const bills = loadScheduledBills(userId)
-  const filtered = bills.filter(b => b.id !== billId)
-  saveScheduledBills(userId, filtered)
-
-  addUserNotification(userId, {
-    title: '❌ Bill Cancelled',
-    message: 'Your scheduled bill has been cancelled.',
-    type: 'info'
-  })
-
+export const deleteBill = (billId: string): boolean => {
+  const index = bills.findIndex(b => b.id === billId)
+  if (index === -1) return false
+  
+  bills.splice(index, 1)
   return true
 }
 
-// Toggle auto-pay
-export const toggleAutoPay = (userId: string, billId: string): ScheduledBill | null => {
-  const bills = loadScheduledBills(userId)
-  const billIndex = bills.findIndex(b => b.id === billId)
-
-  if (billIndex === -1) return null
-
-  bills[billIndex].autoPay = !bills[billIndex].autoPay
-  saveScheduledBills(userId, bills)
-
-  addUserNotification(userId, {
-    title: bills[billIndex].autoPay ? '🔄 Auto-Pay Enabled' : '⏸️ Auto-Pay Disabled',
-    message: `Auto-pay for ${bills[billIndex].billerName} has been ${bills[billIndex].autoPay ? 'enabled' : 'disabled'}.`,
-    type: 'info'
-  })
-
-  return bills[billIndex]
+export const payBill = (billId: string, paymentMethod: 'card' | 'bank'): BillPayment | undefined => {
+  const bill = bills.find(b => b.id === billId)
+  if (!bill) return undefined
+  
+  // Create payment record
+  const payment: BillPayment = {
+    id: `payment_${Date.now()}`,
+    userId: bill.userId,
+    billId: bill.id,
+    billerName: bill.billerName,
+    amount: bill.amount,
+    accountNumber: bill.accountNumber,
+    status: 'completed',
+    paymentMethod,
+    paidAt: new Date().toISOString()
+  }
+  
+  payments.push(payment)
+  
+  // Update bill status
+  bill.status = 'paid'
+  bill.updatedAt = new Date().toISOString()
+  
+  return payment
 }
 
-// Get upcoming bills
-export const getUpcomingBills = (userId: string): ScheduledBill[] => {
-  const bills = loadScheduledBills(userId)
-  const today = new Date()
-  const thirtyDaysFromNow = new Date()
-  thirtyDaysFromNow.setDate(today.getDate() + 30)
-
-  return bills
-    .filter(b => b.status === 'pending')
-    .filter(b => {
-      const dueDate = new Date(b.dueDate)
-      return dueDate <= thirtyDaysFromNow
-    })
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+export const getBillPayments = (billId: string): BillPayment[] => {
+  return payments.filter(p => p.billId === billId)
 }
 
-// Get bill payment history
+export const getUserPayments = (userId: string): BillPayment[] => {
+  return payments.filter(p => p.userId === userId)
+}
+
+export const scheduleBill = (bill: Omit<Bill, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Bill => {
+  const newBill: Bill = {
+    ...bill,
+    id: `scheduled_${Date.now()}`,
+    status: 'scheduled',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+  bills.push(newBill)
+  return newBill
+}
+
+export const cancelScheduledBill = (billId: string): boolean => {
+  const bill = bills.find(b => b.id === billId)
+  if (!bill || bill.status !== 'scheduled') return false
+  
+  bill.status = 'cancelled'
+  bill.updatedAt = new Date().toISOString()
+  return true
+}
+
+// Mock function to load scheduled bills
+const loadScheduledBills = (userId: string): Bill[] => {
+  return bills.filter(b => b.userId === userId)
+}
+
 export const getBillHistory = (userId: string): BillPayment[] => {
-  const bills = loadScheduledBills(userId)
-  return bills
-    .filter(b => b.status === 'paid' && b.paidAt)
+  const userBills = loadScheduledBills(userId)
+  return userBills
+    .filter(b => b.status === 'paid' && b.updatedAt)
     .map(b => ({
       id: `payment_${b.id}`,
       userId: b.userId,
@@ -259,9 +184,18 @@ export const getBillHistory = (userId: string): BillPayment[] => {
       billerName: b.billerName,
       amount: b.amount,
       accountNumber: b.accountNumber,
-      status: 'completed',
-      paymentMethod: b.paymentMethod,
-      paidAt: b.paidAt || b.dueDate
+      status: 'completed' as const,
+      paymentMethod: b.paymentMethod || 'bank',
+      paidAt: b.updatedAt
     }))
-    .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime())
+}
+
+export const getUpcomingBills = (userId: string): Bill[] => {
+  const userBills = loadScheduledBills(userId)
+  return userBills.filter(b => b.status === 'pending' || b.status === 'scheduled')
+}
+
+export const getOverdueBills = (userId: string): Bill[] => {
+  const userBills = loadScheduledBills(userId)
+  return userBills.filter(b => b.status === 'overdue')
 }
