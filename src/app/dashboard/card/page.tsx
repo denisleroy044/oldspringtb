@@ -33,7 +33,7 @@ export default function CardPage() {
   const [showActionModal, setShowActionModal] = useState(false)
   const [showOtpModal, setShowOtpModal] = useState(false)
   const [otpRequestId, setOtpRequestId] = useState<string | null>(null)
-  const [actionType, setActionType] = useState<'freeze' | 'unfreeze' | 'report' | 'replace' | 'increase'>('freeze')
+  const [actionType, setActionType] = useState<'freeze' | 'unfreeze' | 'report' | 'replace' | 'increase' | 'request'>('freeze')
   const [newLimit, setNewLimit] = useState('')
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
@@ -82,13 +82,17 @@ export default function CardPage() {
     setLoading(false)
   }, [user])
 
-  const handleCardAction = (card: Card, action: 'freeze' | 'unfreeze' | 'report' | 'replace' | 'increase') => {
+  const handleCardAction = (card: Card, action: 'freeze' | 'unfreeze' | 'report' | 'replace' | 'increase' | 'request') => {
     setSelectedCard(card)
     setActionType(action)
     
     // For credit limit increase, show modal first, then OTP
     if (action === 'increase') {
       setShowActionModal(true)
+    } else if (action === 'request') {
+      // For new card request, just show success message (no OTP needed)
+      setMessage({ type: 'success', text: 'New card requested. You will receive it in 5-7 business days.' })
+      setSelectedCard(null)
     } else {
       // For other actions, request OTP directly
       handleRequestOTP()
@@ -212,7 +216,15 @@ export default function CardPage() {
 
             {/* Request New Card Button */}
             <button
-              onClick={() => handleCardAction({ id: 'new', type: 'debit', brand: 'visa', lastFour: '', cardholderName: user?.name || '', expiryDate: '', status: 'inactive' } as Card, 'request')}
+              onClick={() => handleCardAction({
+                id: 'new',
+                type: 'debit',
+                brand: 'visa',
+                lastFour: '',
+                cardholderName: user?.name || '',
+                expiryDate: '',
+                status: 'inactive'
+              } as Card, 'request')}
               className="mb-6 bg-soft-gold text-deep-teal px-6 py-3 rounded-lg font-semibold hover:bg-deep-teal hover:text-white transition-colors"
             >
               + Request New Card
