@@ -11,7 +11,6 @@ export interface Transaction {
   status: 'COMPLETED' | 'PENDING' | 'FAILED'
 }
 
-// Mock data for when database is not available
 const mockTransactions: Transaction[] = [
   {
     id: '1',
@@ -37,9 +36,7 @@ const mockTransactions: Transaction[] = [
 
 export async function getUserTransactions(userId: string, limit: number = 10): Promise<Transaction[]> {
   try {
-    // If prisma is not available, return mock data
     if (!prisma) {
-      console.log('Database not connected, using mock transaction data')
       return mockTransactions.slice(0, limit)
     }
 
@@ -52,10 +49,7 @@ export async function getUserTransactions(userId: string, limit: number = 10): P
       orderBy: {
         date: 'desc'
       },
-      take: limit,
-      include: {
-        account: true
-      }
+      take: limit
     })
 
     return transactions.map(t => ({
@@ -76,9 +70,7 @@ export async function getUserTransactions(userId: string, limit: number = 10): P
 
 export async function getAccountTransactions(accountId: string, limit: number = 20): Promise<Transaction[]> {
   try {
-    // If prisma is not available, return mock data filtered by accountId
     if (!prisma) {
-      console.log('Database not connected, using mock transaction data')
       return mockTransactions
         .filter(t => t.accountId === accountId)
         .slice(0, limit)

@@ -31,7 +31,7 @@ const mockAccounts: BankAccount[] = [
 
 export async function getUserAccounts(userId: string): Promise<BankAccount[]> {
   try {
-    // If prisma is not available (no DATABASE_URL), return mock data
+    // If prisma is not available (no DATABASE_URL or during build), return mock data
     if (!prisma) {
       console.log('Database not connected, using mock account data')
       return mockAccounts
@@ -53,16 +53,13 @@ export async function getUserAccounts(userId: string): Promise<BankAccount[]> {
     }))
   } catch (error) {
     console.error('Error fetching accounts:', error)
-    // Return mock data as fallback
     return mockAccounts
   }
 }
 
 export async function getAccountById(accountId: string): Promise<BankAccount | null> {
   try {
-    // If prisma is not available, return mock data
     if (!prisma) {
-      console.log('Database not connected, using mock account data')
       return mockAccounts.find(a => a.id === accountId) || null
     }
 
