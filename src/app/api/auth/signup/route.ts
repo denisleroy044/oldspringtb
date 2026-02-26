@@ -1,12 +1,24 @@
 import { NextResponse } from 'next/server'
-import bcrypt from 'bcryptjs'
 
-// Mock user database (replace with real database in production)
-let users: any[] = []
+// In-memory user storage (same as login)
+let users: any[] = [
+  {
+    id: '1',
+    firstName: 'Test',
+    lastName: 'User',
+    name: 'Test User',
+    email: 'user@example.com',
+    password: 'hashed_password',
+    role: 'USER',
+    twoFactorEnabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }
+]
 
 export async function POST(request: Request) {
   try {
-    const { firstName, lastName, email, phone, password } = await request.json()
+    const { firstName, lastName, email, phone, password, accountType } = await request.json()
 
     // Validate input
     if (!firstName || !lastName || !email || !phone || !password) {
@@ -16,7 +28,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if user already exists
+    // Check if user exists
     const existingUser = users.find(u => u.email === email)
     if (existingUser) {
       return NextResponse.json(
@@ -25,10 +37,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10)
-
-    // Create user
+    // Create new user
     const newUser = {
       id: `user_${Date.now()}`,
       firstName,
@@ -36,9 +45,10 @@ export async function POST(request: Request) {
       name: `${firstName} ${lastName}`,
       email,
       phone,
-      password: hashedPassword,
-      role: 'USER',
+      password: 'hashed_' + password, // In production, use bcrypt
+      role: accountType === 'business' ? 'BUSINESS' : 'USER',
       twoFactorEnabled: false,
+      accountType,
       createdAt: new Date(),
       updatedAt: new Date(),
     }

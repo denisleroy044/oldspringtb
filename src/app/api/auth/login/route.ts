@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 
-// Mock user database (in production, use a real database)
-// This should match the users from signup
+// In-memory user storage (replace with real database in production)
 let users: any[] = [
   {
-    id: 'admin_1',
-    firstName: 'Admin',
+    id: '1',
+    firstName: 'Test',
     lastName: 'User',
-    name: 'Admin User',
-    email: 'admin@oldspring.com',
-    password: '$2a$10$YourHashedPasswordHere', // You'll need to hash this properly
-    role: 'ADMIN',
+    name: 'Test User',
+    email: 'user@example.com',
+    password: '$2a$10$YourHashedPasswordHere', // You'll need to create this
+    role: 'USER',
     twoFactorEnabled: false,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -30,7 +29,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Find user by email
+    // Find user
     const user = users.find(u => u.email === email)
     
     if (!user) {
@@ -40,10 +39,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verify password
-    // Note: In production, you'd compare with hashed password
-    // For now, we'll do a simple check
-    const isValidPassword = password === 'password123' || await bcrypt.compare(password, user.password).catch(() => false)
+    // For demo purposes - accept password123
+    const isValidPassword = password === 'password123'
     
     if (!isValidPassword) {
       return NextResponse.json(
