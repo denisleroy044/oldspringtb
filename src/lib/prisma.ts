@@ -1,15 +1,35 @@
-import { PrismaClient } from '@prisma/client'
+// Simple mock - no database needed
+export const prisma = null
 
-declare global {
-  var prisma: PrismaClient | undefined
-}
+// Mock data functions
+export const mockAccounts = [
+  {
+    id: '1',
+    name: 'Primary Checking',
+    type: 'CHECKING',
+    balance: 5280.42,
+    accountNumber: '****1234',
+    status: 'ACTIVE'
+  },
+  {
+    id: '2',
+    name: 'High-Yield Savings',
+    type: 'SAVINGS',
+    balance: 12750.89,
+    accountNumber: '****5678',
+    status: 'ACTIVE'
+  }
+]
 
-// Only create PrismaClient if DATABASE_URL exists AND we're not in build
-const isBuild = process.env.NEXT_PHASE === 'phase-production-build'
-
-// During build, always return null to avoid database connection attempts
-export const prisma = !isBuild && process.env.DATABASE_URL
-  ? (global.prisma || new PrismaClient())
-  : null
-
-if (process.env.NODE_ENV !== 'production' && prisma) global.prisma = prisma
+export const mockTransactions = [
+  {
+    id: '1',
+    date: new Date('2024-03-15'),
+    description: 'Salary Deposit',
+    amount: 3500.00,
+    type: 'CREDIT',
+    category: 'Income',
+    accountId: '1',
+    status: 'COMPLETED'
+  }
+]
