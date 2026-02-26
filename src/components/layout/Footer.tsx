@@ -40,75 +40,71 @@ export function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Routing Number */}
             <div className="flex items-center gap-4 group">
-              <div className="relative w-20 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-soft-gold/20 transition-all duration-300 animate-float">
-                <div className="absolute inset-0 bg-soft-gold/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative w-16 h-16 group-hover:scale-110 transition-all duration-300 animate-float">
                 <Image
                   src="/images/3d/routing.png"
                   alt="Routing Number"
-                  width={56}
-                  height={56}
-                  className="w-full h-full object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-contain"
                 />
               </div>
               <div>
                 <p className="text-sm text-white/80">Routing Number</p>
-                <p className="text-xl font-bold text-soft-gold group-hover:scale-105 transition-transform duration-300">655205039</p>
+                <p className="text-xl font-bold text-soft-gold">655205039</p>
               </div>
             </div>
 
             {/* Branch Hours */}
             <div className="flex items-center gap-4 group">
-              <div className="relative w-20 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-soft-gold/20 transition-all duration-300 animate-float" style={{ animationDelay: '0.2s' }}>
-                <div className="absolute inset-0 bg-soft-gold/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative w-16 h-16 group-hover:scale-110 transition-all duration-300 animate-float" style={{ animationDelay: '0.2s' }}>
                 <Image
                   src="/images/3d/time.png"
                   alt="Branch Hours"
-                  width={56}
-                  height={56}
-                  className="w-full h-full object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-contain"
                 />
               </div>
               <div>
                 <p className="text-sm text-white/80">Branch Hours</p>
-                <p className="text-lg font-bold text-soft-gold group-hover:scale-105 transition-transform duration-300">Mon-Fri 8:30-6:00</p>
-                <p className="text-lg font-bold text-soft-gold group-hover:scale-105 transition-transform duration-300">Sat 9:00-1:00</p>
+                <p className="text-lg font-bold text-soft-gold">Mon-Fri 8:30-6:00</p>
+                <p className="text-lg font-bold text-soft-gold">Sat 9:00-1:00</p>
               </div>
             </div>
 
             {/* Email Support */}
             <div className="flex items-center gap-4 group">
-              <div className="relative w-20 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-soft-gold/20 transition-all duration-300 animate-float" style={{ animationDelay: '0.4s' }}>
-                <div className="absolute inset-0 bg-soft-gold/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative w-16 h-16 group-hover:scale-110 transition-all duration-300 animate-float" style={{ animationDelay: '0.4s' }}>
                 <Image
                   src="/images/3d/email.png"
                   alt="Email Support"
-                  width={56}
-                  height={56}
-                  className="w-full h-full object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-contain"
                 />
               </div>
               <div>
                 <p className="text-sm text-white/80">Email Support</p>
-                <p className="text-lg font-bold text-soft-gold group-hover:scale-105 transition-transform duration-300">support@oldspring.com</p>
+                <p className="text-lg font-bold text-soft-gold">support@oldspring.com</p>
               </div>
             </div>
 
             {/* Visit Us */}
             <div className="flex items-center gap-4 group">
-              <div className="relative w-20 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-soft-gold/20 transition-all duration-300 animate-float" style={{ animationDelay: '0.6s' }}>
-                <div className="absolute inset-0 bg-soft-gold/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative w-16 h-16 group-hover:scale-110 transition-all duration-300 animate-float" style={{ animationDelay: '0.6s' }}>
                 <Image
                   src="/images/3d/location.png"
                   alt="Visit Us"
-                  width={56}
-                  height={56}
-                  className="w-full h-full object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-contain"
                 />
               </div>
               <div>
                 <p className="text-sm text-white/80">Visit Us</p>
-                <p className="text-lg font-bold text-soft-gold group-hover:scale-105 transition-transform duration-300">100 Bishopsgate</p>
-                <p className="text-lg font-bold text-soft-gold group-hover:scale-105 transition-transform duration-300">London, UK</p>
+                <p className="text-lg font-bold text-soft-gold">100 Bishopsgate</p>
+                <p className="text-lg font-bold text-soft-gold">London, UK</p>
               </div>
             </div>
           </div>
