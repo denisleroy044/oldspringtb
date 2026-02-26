@@ -1,4 +1,5 @@
 'use client'
+export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -416,4 +417,3 @@ export default function AccountDetailPage() {
     </div>
   )
 }
-export const dynamic = 'force-dynamic'
