@@ -262,3 +262,4 @@ function TransactionsContent() {
     </main>
   )
 }
+export const dynamic = 'force-dynamic'

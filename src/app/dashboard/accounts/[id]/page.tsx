@@ -416,3 +416,4 @@ export default function AccountDetailPage() {
     </div>
   )
 }
+export const dynamic = 'force-dynamic'

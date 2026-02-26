@@ -32,26 +32,6 @@ const mockTransactions: Transaction[] = [
     category: 'Groceries',
     accountId: '1',
     status: 'COMPLETED'
-  },
-  {
-    id: '3',
-    date: new Date('2024-03-13'),
-    description: 'Netflix Subscription',
-    amount: 15.99,
-    type: 'DEBIT',
-    category: 'Entertainment',
-    accountId: '1',
-    status: 'COMPLETED'
-  },
-  {
-    id: '4',
-    date: new Date('2024-03-12'),
-    description: 'Uber Ride',
-    amount: 24.50,
-    type: 'DEBIT',
-    category: 'Transportation',
-    accountId: '1',
-    status: 'COMPLETED'
   }
 ]
 
@@ -90,7 +70,6 @@ export async function getUserTransactions(userId: string, limit: number = 10): P
     }))
   } catch (error) {
     console.error('Error fetching transactions:', error)
-    // Return mock data as fallback
     return mockTransactions.slice(0, limit)
   }
 }

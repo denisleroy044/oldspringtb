@@ -1,12 +1,14 @@
 import { PrismaClient } from '@prisma/client'
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
+declare global {
+  var prisma: PrismaClient | undefined
 }
 
 // Only create PrismaClient if DATABASE_URL exists
-export const prisma = process.env.DATABASE_URL 
-  ? (globalForPrisma.prisma ?? new PrismaClient())
+const prisma = process.env.DATABASE_URL 
+  ? (global.prisma || new PrismaClient())
   : null
 
-if (process.env.NODE_ENV !== 'production' && prisma) globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== 'production' && prisma) global.prisma = prisma
+
+export { prisma }
