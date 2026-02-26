@@ -87,7 +87,7 @@ export default function LoginPage() {
                 {/* Logo */}
                 <div className="relative w-32 h-16 mb-8">
                   <Image
-                    src="/images/logo/logo.png"
+                    src="/images/logo/favicon.png"
                     alt="Oldspring Trust"
                     fill
                     className="object-contain object-left"
