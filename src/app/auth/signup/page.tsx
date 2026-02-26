@@ -1,5 +1,7 @@
 'use client'
 
+import { Header } from '@/components/layout/Header'
+import { Footer } from '@/components/layout/Footer'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -79,27 +81,7 @@ export default function SignupPage() {
 
   return (
     <>
-      <header className="border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/" className="flex items-center">
-              <Image
-                src="/images/logo/logo.png"
-                alt="Oldspring Trust"
-                width={160}
-                height={48}
-                className="w-auto h-12 object-contain"
-                priority
-              />
-            </Link>
-            <div className="text-right text-sm text-gray-600">
-              <p>Routing # 655205039</p>
-              <p>24/7 Customer Support</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
+      <Header />
       <main className="min-h-screen bg-cream overflow-hidden relative">
         {/* Animated Gradient Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-deep-teal/5 via-soft-gold/10 to-sage/5"></div>
@@ -519,6 +501,7 @@ export default function SignupPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </>
   )
 }
