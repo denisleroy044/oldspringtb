@@ -1,14 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export', // This creates a static site - NO BUILD ISSUES!
+  output: 'export',
   images: {
-    unoptimized: true, // This solves all image loading issues
+    unoptimized: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // Remove the eslint config from here
   typescript: {
     ignoreBuildErrors: true,
+  },
+  // Add experimental config
+  experimental: {
+    appDir: true,
   },
 }
 
