@@ -701,9 +701,15 @@ export default function HomePage() {
           {/* Floating Liquid Glass Card - Left Aligned, Smaller, More Creative */}
           <div className="absolute inset-0 flex items-center justify-start z-10">
             <div className="max-w-2xl mx-4 sm:mx-6 lg:mx-12 xl:mx-16">
-              <div className="backdrop-blur-md bg-white/10 rounded-2xl p-6 md:p-8 border border-white/30 shadow-2xl
-                            [background:linear-gradient(135deg,rgba(255,255,255,0.2),rgba(255,255,255,0.05))_border-box]
-                            [backdrop-filter:blur(20px)_saturate(180%)]
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05)) border-box',
+              backdropFilter: 'blur(20px) saturate(180%)'
+            }}
+            className="backdrop-blur-md bg-white/10 rounded-2xl p-6 md:p-8 border border-white/30 shadow-2xl hover:backdrop-blur-xl hover:bg-white/15 transition-all duration-500 hover:shadow-[0_30px_50px_rgba(0,0,0,0.3)] transform hover:scale-105 hover:-translate-y-2 animate-float-subtle"
+          >
+                            
+                            
                             hover:backdrop-blur-xl hover:bg-white/15 transition-all duration-500
                             hover:shadow-[0_30px_50px_rgba(0,0,0,0.3)]
                             transform hover:scale-105 hover:-translate-y-2
