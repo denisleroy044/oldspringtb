@@ -2,81 +2,113 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { useState, useEffect } from 'react'
 
 export function Footer() {
+  const [showBackToTop, setShowBackToTop] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
-    <footer>
-      {/* CTA Section - Sage Green */}
+    <>
+      {/* Back to Top Button */}
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-24 right-8 z-50 w-12 h-12 bg-soft-gold text-deep-teal rounded-full shadow-lg hover:bg-sage hover:text-white transition-all duration-300 hover:scale-110 animate-bounce flex items-center justify-center group"
+          aria-label="Back to top"
+        >
+          <svg className="w-6 h-6 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </button>
+      )}
+
+      {/* CTA Section - Sage Green with Floating Images */}
       <div className="bg-sage">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Routing Number */}
             <div className="flex items-center gap-4 group">
-              <div className="relative w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:bg-soft-gold/20 transition-all duration-300">
+              <div className="relative w-20 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-soft-gold/20 transition-all duration-300 animate-float">
+                <div className="absolute inset-0 bg-soft-gold/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <Image
                   src="/images/3d/routing.png"
                   alt="Routing Number"
-                  width={48}
-                  height={48}
-                  className="w-full h-full object-contain"
+                  width={56}
+                  height={56}
+                  className="w-full h-full object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
               <div>
                 <p className="text-sm text-white/80">Routing Number</p>
-                <p className="text-xl font-bold text-soft-gold">655205039</p>
+                <p className="text-xl font-bold text-soft-gold group-hover:scale-105 transition-transform duration-300">655205039</p>
               </div>
             </div>
 
             {/* Branch Hours */}
             <div className="flex items-center gap-4 group">
-              <div className="relative w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:bg-soft-gold/20 transition-all duration-300">
+              <div className="relative w-20 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-soft-gold/20 transition-all duration-300 animate-float" style={{ animationDelay: '0.2s' }}>
+                <div className="absolute inset-0 bg-soft-gold/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <Image
                   src="/images/3d/time.png"
                   alt="Branch Hours"
-                  width={48}
-                  height={48}
-                  className="w-full h-full object-contain"
+                  width={56}
+                  height={56}
+                  className="w-full h-full object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
               <div>
                 <p className="text-sm text-white/80">Branch Hours</p>
-                <p className="text-lg font-bold text-soft-gold">Mon-Fri 8:30-6:00</p>
-                <p className="text-lg font-bold text-soft-gold">Sat 9:00-1:00</p>
+                <p className="text-lg font-bold text-soft-gold group-hover:scale-105 transition-transform duration-300">Mon-Fri 8:30-6:00</p>
+                <p className="text-lg font-bold text-soft-gold group-hover:scale-105 transition-transform duration-300">Sat 9:00-1:00</p>
               </div>
             </div>
 
             {/* Email Support */}
             <div className="flex items-center gap-4 group">
-              <div className="relative w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:bg-soft-gold/20 transition-all duration-300">
+              <div className="relative w-20 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-soft-gold/20 transition-all duration-300 animate-float" style={{ animationDelay: '0.4s' }}>
+                <div className="absolute inset-0 bg-soft-gold/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <Image
                   src="/images/3d/email.png"
                   alt="Email Support"
-                  width={48}
-                  height={48}
-                  className="w-full h-full object-contain"
+                  width={56}
+                  height={56}
+                  className="w-full h-full object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
               <div>
                 <p className="text-sm text-white/80">Email Support</p>
-                <p className="text-lg font-bold text-soft-gold">support@oldspring.com</p>
+                <p className="text-lg font-bold text-soft-gold group-hover:scale-105 transition-transform duration-300">support@oldspring.com</p>
               </div>
             </div>
 
             {/* Visit Us */}
             <div className="flex items-center gap-4 group">
-              <div className="relative w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:bg-soft-gold/20 transition-all duration-300">
+              <div className="relative w-20 h-20 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:scale-110 group-hover:bg-soft-gold/20 transition-all duration-300 animate-float" style={{ animationDelay: '0.6s' }}>
+                <div className="absolute inset-0 bg-soft-gold/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <Image
                   src="/images/3d/location.png"
                   alt="Visit Us"
-                  width={48}
-                  height={48}
-                  className="w-full h-full object-contain"
+                  width={56}
+                  height={56}
+                  className="w-full h-full object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
                 />
               </div>
               <div>
                 <p className="text-sm text-white/80">Visit Us</p>
-                <p className="text-lg font-bold text-soft-gold">100 Bishopsgate</p>
-                <p className="text-lg font-bold text-soft-gold">London, UK</p>
+                <p className="text-lg font-bold text-soft-gold group-hover:scale-105 transition-transform duration-300">100 Bishopsgate</p>
+                <p className="text-lg font-bold text-soft-gold group-hover:scale-105 transition-transform duration-300">London, UK</p>
               </div>
             </div>
           </div>
@@ -142,7 +174,7 @@ export function Footer() {
             <div className="flex flex-wrap items-center justify-center gap-8">
               {/* FDIC Logo */}
               <div className="flex flex-col items-center group">
-                <div className="w-32 h-16 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center p-2 hover:bg-white/20 transition-all duration-300">
+                <div className="w-32 h-16 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center p-2 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                   <Image
                     src="/images/licenses/us-fdic.png"
                     alt="FDIC Insured"
@@ -156,7 +188,7 @@ export function Footer() {
 
               {/* NCUA Certificate */}
               <div className="flex flex-col items-center group">
-                <div className="w-32 h-16 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center p-2 hover:bg-white/20 transition-all duration-300">
+                <div className="w-32 h-16 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center p-2 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                   <Image
                     src="/images/licenses/ncua-cert.png"
                     alt="NCUA Certified"
@@ -170,7 +202,7 @@ export function Footer() {
 
               {/* Equal Housing Lender */}
               <div className="flex flex-col items-center group">
-                <div className="w-32 h-16 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center p-2 hover:bg-white/20 transition-all duration-300">
+                <div className="w-32 h-16 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center p-2 hover:bg-white/20 transition-all duration-300 hover:scale-105">
                   <Image
                     src="/images/licenses/ncua-lender.png"
                     alt="Equal Housing Lender"
@@ -211,6 +243,17 @@ export function Footer() {
           </div>
         </div>
       </div>
-    </footer>
+
+      <style jsx global>{`
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+          100% { transform: translateY(0px); }
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+      `}</style>
+    </>
   )
 }
