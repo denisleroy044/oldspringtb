@@ -8,13 +8,98 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
 
-// TabbedRatesSection Component (keep as is)
+// TabbedRatesSection Component
 const TabbedRatesSection = () => {
   const [rateTab, setRateTab] = useState(0)
-  // ... (keep your existing TabbedRatesSection code)
+
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-      {/* ... your existing rates section */}
+      <div className="bg-gradient-to-r from-deep-teal to-sage p-6 text-white">
+        <h2 className="text-2xl md:text-3xl font-bold text-center">Oldspring Trust Rates</h2>
+        <p className="text-white/80 text-center mt-2 text-sm">Current rates and offers available to you</p>
+      </div>
+
+      <div className="flex flex-wrap gap-2 p-4 bg-gray-50 border-b border-gray-200">
+        {['Featured', 'Savings', 'Credit Cards', 'Loans', 'Mortgages'].map((tab, index) => (
+          <button
+            key={tab}
+            onClick={() => setRateTab(index)}
+            className={`flex-1 py-3 px-4 rounded-lg font-medium text-sm transition-all duration-300 ${
+              rateTab === index
+                ? 'bg-deep-teal text-white shadow-lg transform scale-105'
+                : 'bg-white text-gray-600 hover:text-deep-teal hover:shadow-md border border-gray-200'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* FEATURED Tab */}
+          {rateTab === 0 && (
+            <>
+              <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-105 group">
+                <div className="text-xs font-semibold text-deep-teal mb-3 tracking-wider">FEATURED</div>
+                <div className="text-4xl font-bold text-soft-gold mb-2">3.75%<span className="text-sm text-gray-400 ml-1">APY</span></div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-deep-teal transition-colors">High Yield Savings Account</h3>
+                <p className="text-sm text-gray-500">High Yield Savings Rate</p>
+                <Link href="/save/high-yield" className="inline-block mt-4 text-xs font-medium text-deep-teal hover:text-soft-gold transition-colors">
+                  Learn More →
+                </Link>
+              </div>
+
+              <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-105 group">
+                <div className="text-xs font-semibold text-deep-teal mb-3 tracking-wider">FEATURED</div>
+                <div className="text-4xl font-bold text-soft-gold mb-2">3.65%<span className="text-sm text-gray-400 ml-1">APY</span></div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-deep-teal transition-colors">18 Month Certificate</h3>
+                <p className="text-sm text-gray-500">Standard Certificate Rates</p>
+                <Link href="/save/certificates" className="inline-block mt-4 text-xs font-medium text-deep-teal hover:text-soft-gold transition-colors">
+                  Learn More →
+                </Link>
+              </div>
+
+              <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-105 group">
+                <div className="text-xs font-semibold text-deep-teal mb-3 tracking-wider">FEATURED</div>
+                <div className="text-4xl font-bold text-soft-gold mb-2">4.00%<span className="text-sm text-gray-400 ml-1">APY</span></div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-deep-teal transition-colors">36 Month Certificate</h3>
+                <p className="text-sm text-gray-500">Standard Certificate Rates</p>
+                <Link href="/save/certificates" className="inline-block mt-4 text-xs font-medium text-deep-teal hover:text-soft-gold transition-colors">
+                  Learn More →
+                </Link>
+              </div>
+
+              <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-105 group">
+                <div className="text-xs font-semibold text-deep-teal mb-3 tracking-wider">FEATURED</div>
+                <div className="text-xs text-gray-500 mb-1">AS LOW AS</div>
+                <div className="text-4xl font-bold text-soft-gold mb-2">15.49%<span className="text-sm text-gray-400 ml-1">APR</span></div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-deep-teal transition-colors">Cash Rewards Mastercard</h3>
+                <p className="text-sm text-gray-500">Mastercard</p>
+                <p className="text-xs text-gray-400">variable APR</p>
+                <Link href="/borrow/credit-cards" className="inline-block mt-4 text-xs font-medium text-deep-teal hover:text-soft-gold transition-colors">
+                  Learn More →
+                </Link>
+              </div>
+            </>
+          )}
+
+          {/* Other tabs would go here - keeping them as is */}
+          {rateTab === 1 && <div>Savings content</div>}
+          {rateTab === 2 && <div>Credit Cards content</div>}
+          {rateTab === 3 && <div>Loans content</div>}
+          {rateTab === 4 && <div>Mortgages content</div>}
+        </div>
+
+        <div className="text-center pt-8 mt-4 border-t border-gray-100">
+          <Link href="/rates" className="inline-flex items-center text-deep-teal hover:text-soft-gold font-medium transition-colors group">
+            View All Rates
+            <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }
@@ -74,7 +159,6 @@ const FinancialStrengthGrid = () => {
         </ScrollAnimation>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 stagger-children">
-          {/* First Article - Full width on mobile, first column on desktop */}
           <ScrollAnimation animation="fadeInLeft" delay={0.1} className="md:col-span-1">
             <Link href={articles[0].link} className="group block h-full">
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-500 hover:scale-[1.02] h-full">
@@ -111,9 +195,7 @@ const FinancialStrengthGrid = () => {
             </Link>
           </ScrollAnimation>
 
-          {/* Right Column Grid - 3 articles stacked */}
           <div className="md:col-span-1 space-y-8">
-            {/* Second Article */}
             <ScrollAnimation animation="fadeInRight" delay={0.2}>
               <Link href={articles[1].link} className="group block">
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-500 hover:scale-[1.02]">
@@ -149,7 +231,6 @@ const FinancialStrengthGrid = () => {
               </Link>
             </ScrollAnimation>
 
-            {/* Third Article */}
             <ScrollAnimation animation="fadeInRight" delay={0.3}>
               <Link href={articles[2].link} className="group block">
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-500 hover:scale-[1.02]">
@@ -185,7 +266,6 @@ const FinancialStrengthGrid = () => {
               </Link>
             </ScrollAnimation>
 
-            {/* Fourth Article */}
             <ScrollAnimation animation="fadeInRight" delay={0.4}>
               <Link href={articles[3].link} className="group block">
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-500 hover:scale-[1.02]">
@@ -223,7 +303,6 @@ const FinancialStrengthGrid = () => {
           </div>
         </div>
 
-        {/* View All Articles Link */}
         <div className="text-center mt-12">
           <Link href="/learn" className="inline-flex items-center bg-deep-teal text-white px-8 py-4 rounded-xl font-semibold hover:bg-soft-gold transition-all duration-300 group hover:scale-105">
             <span>View All Articles</span>
@@ -245,7 +324,6 @@ const CampaignFeatureCard = () => {
         <ScrollAnimation animation="fadeInUp">
           <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl overflow-hidden border border-gray-100">
             <div className="grid md:grid-cols-2 gap-0">
-              {/* Image Side */}
               <div className="relative h-64 md:h-auto overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-r from-deep-teal/30 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <Image
@@ -262,7 +340,6 @@ const CampaignFeatureCard = () => {
                 </div>
               </div>
 
-              {/* Content Side */}
               <div className="p-8 md:p-12 flex flex-col justify-center bg-gradient-to-br from-white to-gray-50">
                 <div className="max-w-xl">
                   <h2 id="campaign-feature__title" className="text-3xl md:text-4xl font-black text-deep-teal mb-4 leading-tight">
@@ -432,17 +509,9 @@ export default function HomePage() {
     <>
       <Header />
       <main className="min-h-screen bg-cream overflow-hidden">
-        {/* Hero Section with Image Slider - Updated with local images */}
+        {/* Hero Section with Image Slider */}
         <section className="relative h-[600px]">
-          <div className="absolute inset-0">
-            <Image
-              src="/images/hero/family-banking.jpg"
-              alt="Family banking"
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
+          <ImageSlider />
           
           {/* Liquid Glass Card */}
           <div className="absolute inset-0 flex items-center justify-center z-10">
@@ -452,10 +521,14 @@ export default function HomePage() {
                             [backdrop-filter:blur(20px)_saturate(180%)]
                             hover:backdrop-blur-xl hover:bg-white/15 transition-all duration-500
                             hover:shadow-[0_30px_50px_rgba(0,0,0,0.3)]">
+                
+                {/* Glass shine effect */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent 
                               rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-1000
                               -translate-x-full hover:translate-x-full 
                               [transition:transform_1.5s_ease,opacity_0.5s_ease]"></div>
+                
+                {/* Content */}
                 <div className="relative z-10 text-center">
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-black mb-4 text-white drop-shadow-lg 
                                  animate-fadeInUp [text-shadow:2px_2px_4px_rgba(0,0,0,0.3)]">
@@ -598,7 +671,7 @@ export default function HomePage() {
         {/* Help Center Icon Grid */}
         <HelpCenterGrid />
 
-        {/* Testimonials Section - Using Initials instead of Images */}
+        {/* Testimonials Section */}
         <section className="py-20 bg-soft-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <ScrollAnimation animation="fadeInUp">
