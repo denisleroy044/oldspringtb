@@ -5,9 +5,86 @@ import Image from 'next/image'
 
 export function Footer() {
   return (
-    <footer className="bg-deep-teal text-white pt-16 pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Main Footer Content */}
+    <footer className="bg-deep-teal text-white">
+      {/* CTA Section with Glass Images */}
+      <div className="border-b border-white/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Routing Number */}
+            <div className="flex items-center gap-4 group">
+              <div className="relative w-16 h-16 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:bg-soft-gold/20 transition-all duration-300">
+                <Image
+                  src="/images/3d/routing.png"
+                  alt="Routing Number"
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div>
+                <p className="text-sm text-white/70">Routing Number</p>
+                <p className="text-xl font-bold text-soft-gold">655205039</p>
+              </div>
+            </div>
+
+            {/* Branch Hours */}
+            <div className="flex items-center gap-4 group">
+              <div className="relative w-16 h-16 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:bg-soft-gold/20 transition-all duration-300">
+                <Image
+                  src="/images/3d/time.png"
+                  alt="Branch Hours"
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div>
+                <p className="text-sm text-white/70">Branch Hours</p>
+                <p className="text-lg font-bold text-soft-gold">Mon-Fri 8:30-6:00</p>
+                <p className="text-lg font-bold text-soft-gold">Sat 9:00-1:00</p>
+              </div>
+            </div>
+
+            {/* Email Support */}
+            <div className="flex items-center gap-4 group">
+              <div className="relative w-16 h-16 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:bg-soft-gold/20 transition-all duration-300">
+                <Image
+                  src="/images/3d/email.png"
+                  alt="Email Support"
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div>
+                <p className="text-sm text-white/70">Email Support</p>
+                <p className="text-lg font-bold text-soft-gold">support@oldspring.com</p>
+              </div>
+            </div>
+
+            {/* Visit Us */}
+            <div className="flex items-center gap-4 group">
+              <div className="relative w-16 h-16 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center p-3 group-hover:bg-soft-gold/20 transition-all duration-300">
+                <Image
+                  src="/images/3d/location.png"
+                  alt="Visit Us"
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div>
+                <p className="text-sm text-white/70">Visit Us</p>
+                <p className="text-lg font-bold text-soft-gold">100 Bishopsgate</p>
+                <p className="text-lg font-bold text-soft-gold">London, UK</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Footer Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           {/* Company Info */}
           <div>
