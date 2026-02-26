@@ -1,50 +1,48 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { getCurrentUser, logout as authLogout, User } from '@/lib/auth/authService'
-import { useRouter } from 'next/navigation'
+
+interface User {
+  id: string
+  name: string
+  email: string
+  role: string
+}
 
 interface AuthContextType {
   user: User | null
-  setUser: (user: User | null) => void
-  loading: boolean
-  logout: () => Promise<void>
+  login: (user: User) => void
+  logout: () => void
+  isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    checkUser()
+    // Check for stored user data on mount
+    const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user')
+    if (storedUser) {
+      setUser(JSON.parse(storedUser))
+    }
+    setIsLoading(false)
   }, [])
 
-  const checkUser = async () => {
-    try {
-      const currentUser = await getCurrentUser()
-      setUser(currentUser)
-    } catch (error) {
-      console.error('Error checking user:', error)
-    } finally {
-      setLoading(false)
-    }
+  const login = (userData: User) => {
+    setUser(userData)
   }
 
-  const logout = async () => {
-    try {
-      await authLogout()
-      setUser(null)
-      router.push('/auth/login')
-    } catch (error) {
-      console.error('Error logging out:', error)
-    }
+  const logout = () => {
+    localStorage.removeItem('user')
+    sessionStorage.removeItem('user')
+    setUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   )
