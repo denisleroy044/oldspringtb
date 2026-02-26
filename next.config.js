@@ -4,13 +4,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Remove the eslint config from here
   typescript: {
     ignoreBuildErrors: true,
-  },
-  // Add experimental config
-  experimental: {
-    appDir: true,
   },
 }
 
