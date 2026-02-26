@@ -218,24 +218,18 @@ export function Header() {
               <div className="hidden lg:flex items-center space-x-0">
                 <Link
                   href="/auth/login"
-                  className="relative px-6 py-3 text-sm font-semibold text-white bg-deep-teal 
-                             overflow-hidden group transition-all duration-300
-                             border-0 rounded-none inline-block"
+                  className="relative px-6 py-3 text-sm font-semibold text-white bg-deep-teal overflow-hidden group transition-all duration-300 border-0 rounded-none inline-block"
                 >
-                  <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 
-                                 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
                     LOGIN
                   </span>
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="relative px-6 py-3 text-sm font-semibold text-white bg-sage 
-                             overflow-hidden group transition-all duration-200
-                             border-0 rounded-none inline-block"
+                  className="relative px-6 py-3 text-sm font-semibold text-white bg-sage overflow-hidden group transition-all duration-200 border-0 rounded-none inline-block"
                 >
-                  <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 
-                                 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
                     OPEN ACCOUNT
                   </span>
@@ -287,22 +281,18 @@ export function Header() {
               <div className="pt-4 space-y-3">
                 <Link
                   href="/auth/login"
-                  className="relative block w-full py-3 text-center font-semibold text-white bg-deep-teal 
-                             overflow-hidden group rounded-none hover:bg-deep-teal/90 transition-all duration-200"
+                  className="relative block w-full py-3 text-center font-semibold text-white bg-deep-teal overflow-hidden group rounded-none hover:bg-deep-teal/90 transition-all duration-200"
                 >
-                  <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 
-                                 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
                     LOGIN
                   </span>
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="relative block w-full py-3 text-center font-semibold text-white bg-sage 
-                             overflow-hidden group rounded-none hover:bg-sage/90 transition-all duration-200"
+                  className="relative block w-full py-3 text-center font-semibold text-white bg-sage overflow-hidden group rounded-none hover:bg-sage/90 transition-all duration-200"
                 >
-                  <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 
-                                 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
                     OPEN ACCOUNT
                   </span>
@@ -317,24 +307,18 @@ export function Header() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex w-full">
         <Link
           href="/auth/login"
-          className="relative flex-1 py-5 text-center font-bold text-white bg-deep-teal 
-                     overflow-hidden group transition-all duration-200
-                     text-base tracking-wider rounded-none"
+          className="relative flex-1 py-5 text-center font-bold text-white bg-deep-teal overflow-hidden group transition-all duration-200 text-base tracking-wider rounded-none"
         >
-          <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 
-                         -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+          <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
           <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
             LOGIN
           </span>
         </Link>
         <Link
           href="/auth/signup"
-          className="relative flex-1 py-5 text-center font-bold text-white bg-sage 
-                     overflow-hidden group transition-all duration-200
-                     text-base tracking-wider rounded-none"
+          className="relative flex-1 py-5 text-center font-bold text-white bg-sage overflow-hidden group transition-all duration-200 text-base tracking-wider rounded-none"
         >
-          <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 
-                         -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+          <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
           <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
             OPEN ACCOUNT
           </span>
