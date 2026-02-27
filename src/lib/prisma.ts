@@ -1,16 +1,18 @@
 import { PrismaClient } from '@prisma/client'
+import { neon } from '@neondatabase/serverless'
+import { PrismaNeonHTTP } from '@prisma/adapter-neon'
 
-const prismaClientSingleton = () => {
-  return new PrismaClient()
-}
+// For serverless environments (Vercel)
+const sql = neon(process.env.DATABASE_URL || '')
+const adapter = new PrismaNeonHTTP(sql)
 
-declare global {
-  var prisma: undefined | ReturnType<typeof prismaClientSingleton>
-}
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
-const prisma = globalThis.prisma ?? prismaClientSingleton()
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    adapter,
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  })
 
-export { prisma }
-export default prisma
-
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
