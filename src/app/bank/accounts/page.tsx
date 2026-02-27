@@ -1,3 +1,5 @@
+'use client'
+
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import Link from 'next/link'
@@ -19,8 +21,8 @@ export default function BankAccountsPage() {
           <p className="text-xl text-gray-600 mb-8">Choose the account that fits your lifestyle.</p>
           
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-[#1e3a5f] mb-3">Personal Checking</h2>
+            <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <h2 className="text-2xl font-bold text-[#1e3a5f] mb-3 group-hover:text-[#FF8C00] transition-colors">Personal Checking</h2>
               <p className="text-gray-600 mb-4">Perfect for everyday banking with no monthly maintenance fees.</p>
               <ul className="space-y-2 text-gray-600 mb-6">
                 <li className="flex items-center">
@@ -42,11 +44,17 @@ export default function BankAccountsPage() {
                   Mobile check deposit
                 </li>
               </ul>
-              <button className="bg-[#FF8C00] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#E67E00] transition">Open Account</button>
+              <Link
+                href="/auth/signup"
+                className="group relative inline-block px-6 py-3 bg-[#FF8C00] text-white font-semibold rounded-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:bg-[#E67E00] hover:scale-105 hover:-translate-y-1"
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/40 to-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                <span className="relative">Open Account</span>
+              </Link>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-[#1e3a5f] mb-3">Interest Checking</h2>
+            <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <h2 className="text-2xl font-bold text-[#1e3a5f] mb-3 group-hover:text-[#2E8B57] transition-colors">Interest Checking</h2>
               <p className="text-gray-600 mb-4">Earn interest while enjoying the flexibility of a checking account.</p>
               <ul className="space-y-2 text-gray-600 mb-6">
                 <li className="flex items-center">
@@ -68,7 +76,13 @@ export default function BankAccountsPage() {
                   Overdraft protection
                 </li>
               </ul>
-              <button className="bg-[#2E8B57] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#267A48] transition">Open Account</button>
+              <Link
+                href="/auth/signup"
+                className="group relative inline-block px-6 py-3 bg-[#2E8B57] text-white font-semibold rounded-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:bg-[#267A48] hover:scale-105 hover:-translate-y-1"
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/40 to-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                <span className="relative">Open Account</span>
+              </Link>
             </div>
           </div>
         </div>
