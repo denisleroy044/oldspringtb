@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function ServicesPage() {
   return (
@@ -31,51 +32,70 @@ export default function ServicesPage() {
                 {
                   title: "Personal Banking",
                   description: "Checking accounts, savings, and everyday banking solutions designed for individuals.",
-                  icon: "🏦",
+                  icon: "/images/3d/glassaccount.png",
+                  alt: "Personal Banking",
                   link: "/bank",
                   features: ["Interest-bearing checking", "High-yield savings", "Mobile banking", "Debit cards"]
                 },
                 {
                   title: "Business Banking",
                   description: "Commercial accounts, merchant services, and financing for businesses of all sizes.",
-                  icon: "💼",
+                  icon: "/images/3d/glassbusiness.png",
+                  alt: "Business Banking",
                   link: "/business",
                   features: ["Business checking", "Merchant services", "Payroll solutions", "Business credit cards"]
                 },
                 {
                   title: "Loans & Mortgages",
                   description: "Competitive rates on personal loans, auto loans, and home mortgages.",
-                  icon: "💰",
+                  icon: "/images/3d/glasschecklist.png",
+                  alt: "Loans & Mortgages",
                   link: "/borrow",
                   features: ["Personal loans", "Auto loans", "Home mortgages", "Debt consolidation"]
                 },
                 {
                   title: "Credit Cards",
                   description: "Rewards cards, low APR options, and cards designed to build credit.",
-                  icon: "💳",
+                  icon: "/images/3d/glasscreditcard.png",
+                  alt: "Credit Cards",
                   link: "/borrow/credit-cards",
                   features: ["Cash back rewards", "Travel rewards", "Low intro APR", "No annual fee"]
                 },
                 {
                   title: "Wealth Management",
                   description: "Investment advice, retirement planning, and wealth preservation strategies.",
-                  icon: "📈",
+                  icon: "/images/3d/glassinvestment.png",
+                  alt: "Wealth Management",
                   link: "/invest",
                   features: ["Investment management", "Retirement planning", "Estate planning", "Financial advisory"]
                 },
                 {
                   title: "Insurance",
                   description: "Protection for what matters most with comprehensive insurance options.",
-                  icon: "🛡️",
+                  icon: "/images/3d/glasssecure.png",
+                  alt: "Insurance",
                   link: "/insurance",
                   features: ["Life insurance", "Home insurance", "Auto insurance", "Business insurance"]
                 }
               ].map((service, index) => (
                 <ScrollAnimation key={index} animation="fadeInUp" delay={0.1 * (index + 1)}>
                   <Link href={service.link}>
-                    <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 h-full">
-                      <div className="text-5xl mb-4">{service.icon}</div>
-                      <h3 className="text-2xl font-bold text-deep-teal mb-3">{service.title}</h3>
+                    <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 h-full group">
+                      <div className="relative w-20 h-20 mb-4">
+                        {/* Glow effect */}
+                        <div className="absolute inset-0 bg-soft-gold/20 rounded-full blur-2xl scale-75 group-hover:scale-110 transition-all duration-500"></div>
+                        {/* 3D Glass Icon */}
+                        <div className="relative w-full h-full group-hover:scale-110 transition-transform duration-500">
+                          <Image
+                            src={service.icon}
+                            alt={service.alt}
+                            width={80}
+                            height={80}
+                            className="w-full h-full object-contain drop-shadow-2xl"
+                          />
+                        </div>
+                      </div>
+                      <h3 className="text-2xl font-bold text-deep-teal mb-3 group-hover:text-soft-gold transition-colors">{service.title}</h3>
                       <p className="text-gray-600 mb-4">{service.description}</p>
                       <ul className="space-y-2 mb-6">
                         {service.features.map((feature, i) => (
