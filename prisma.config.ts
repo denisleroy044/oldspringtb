@@ -1,5 +1,9 @@
 import { defineConfig } from '@prisma/config'
 
 export default defineConfig({
-  schema: 'prisma/schema.prisma',
+  earlyAccess: true,
+  schema: {
+    kind: 'single',
+    filePath: './prisma/schema.prisma',
+  },
 })
