@@ -229,10 +229,11 @@ export default function CareersPage() {
                         <p className="text-gray-600 mt-2">{job.description}</p>
                       </div>
                       <Link
-                        href={`/careers/${job.title.toLowerCase().replace(/\s+/g, '-')}`}
-                        className="bg-soft-gold text-deep-teal px-6 py-2 rounded-lg font-medium hover:bg-deep-teal hover:text-white transition-all duration-300 whitespace-nowrap"
+                        href="/contact"
+                        className="bg-soft-gold text-deep-teal px-6 py-2 rounded-lg font-medium hover:bg-deep-teal hover:text-white transition-all duration-300 whitespace-nowrap group relative overflow-hidden"
                       >
-                        Apply Now
+                        <span className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/40 to-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                        <span className="relative">Apply Now</span>
                       </Link>
                     </div>
                   </div>
