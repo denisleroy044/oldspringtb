@@ -109,172 +109,165 @@ export function Header() {
     { name: 'PAYMENTS', href: '/payments', hasDropdown: true, dropdownId: 'payments' },
   ]
 
-  // Beautiful modern fintech dropdown content
+  // Dropdown content with 3D glass icons
   const dropdownContent = {
     bank: {
       title: 'Banking Solutions',
-      description: 'Explore our comprehensive banking products designed for your lifestyle',
-      icon: '🏦',
-      color: 'from-blue-500 to-blue-600',
+      description: 'Explore our comprehensive banking products',
+      icon: '/images/3d/glassbank.png',
       sections: [
         {
           title: 'Personal Banking',
           links: [
-            { name: 'Checking Accounts', href: '/bank/accounts', description: 'Everyday banking with no monthly fees', icon: '💳' },
-            { name: 'Savings Accounts', href: '/bank/savings', description: 'Grow your money with competitive rates', icon: '💰' },
-            { name: 'CDs & IRAs', href: '/bank/cds', description: 'Secure your retirement with fixed rates', icon: '📈' },
+            { name: 'Checking Accounts', href: '/bank/accounts', description: 'Everyday banking with no monthly fees', icon: '/images/3d/glassaccount.png' },
+            { name: 'Savings Accounts', href: '/bank/savings', description: 'Grow your money with competitive rates', icon: '/images/3d/glasswallet.png' },
+            { name: 'CDs & IRAs', href: '/bank/cds', description: 'Secure your retirement with fixed rates', icon: '/images/3d/glasssecure.png' },
           ]
         },
         {
           title: 'Digital Banking',
           links: [
-            { name: 'Online Banking', href: '/bank/online-banking', description: 'Bank from anywhere, anytime', icon: '🌐' },
-            { name: 'Mobile Banking', href: '/bank/mobile', description: 'Powerful banking in your pocket', icon: '📱' },
-            { name: 'Bill Pay', href: '/payments/bill-pay', description: 'Easy bill management', icon: '📄' },
+            { name: 'Online Banking', href: '/bank/online-banking', description: 'Bank from anywhere, anytime', icon: '/images/3d/glassmobile.png' },
+            { name: 'Mobile Banking', href: '/bank/mobile', description: 'Powerful banking in your pocket', icon: '/images/3d/glassmobilephone.png' },
+            { name: 'Bill Pay', href: '/payments/bill-pay', description: 'Easy bill management', icon: '/images/3d/glasschecklist.png' },
           ]
         }
       ]
     },
     save: {
       title: 'Save for Your Future',
-      description: 'Choose the right savings account to reach your financial goals',
-      icon: '⭐',
-      color: 'from-green-500 to-green-600',
+      description: 'Choose the right savings account',
+      icon: '/images/3d/glasssecure.png',
       sections: [
         {
           title: 'Savings Accounts',
           links: [
-            { name: 'High Yield Savings', href: '/save/high-yield', description: '3.75% APY - Maximize your returns', icon: '📊' },
-            { name: 'Money Market', href: '/save/money-market', description: '2.75% APY - Flexible access', icon: '💰' },
-            { name: 'Certificates', href: '/save/certificates', description: '3.25% APY - Fixed term savings', icon: '📜' },
+            { name: 'High Yield Savings', href: '/save/high-yield', description: '3.75% APY - Maximize your returns', icon: '/images/3d/glassinvestment.png' },
+            { name: 'Money Market', href: '/save/money-market', description: '2.75% APY - Flexible access', icon: '/images/3d/glassmoney.png' },
+            { name: 'Certificates', href: '/save/certificates', description: '3.25% APY - Fixed term savings', icon: '/images/3d/glasscertificate.png' },
           ]
         },
         {
           title: 'Special Purpose',
           links: [
-            { name: 'Holiday Club', href: '/save/holiday-club', description: 'Save for the holidays', icon: '🎄' },
-            { name: 'Star Savings', href: '/save/star', description: '2.50% APY - For young savers', icon: '⭐' },
-            { name: 'Kids Club', href: '/save/kids-club', description: '2.00% APY - Teach kids to save', icon: '🧸' },
+            { name: 'Holiday Club', href: '/save/holiday-club', description: 'Save for the holidays', icon: '/images/3d/glasschristmastree.png' },
+            { name: 'Star Savings', href: '/save/star', description: '2.50% APY - For young savers', icon: '/images/3d/glassstar.png' },
+            { name: 'Kids Club', href: '/save/kids-club', description: '2.00% APY - Teach kids to save', icon: '/images/3d/piggybank.png' },
           ]
         }
       ]
     },
     borrow: {
       title: 'Borrow with Confidence',
-      description: 'Competitive rates and flexible terms for your borrowing needs',
-      icon: '🏦',
-      color: 'from-purple-500 to-purple-600',
+      description: 'Competitive rates and flexible terms',
+      icon: '/images/3d/glasshandshake.png',
       sections: [
         {
           title: 'Personal Loans',
           links: [
-            { name: 'Personal Loans', href: '/borrow/personal', description: 'Rates as low as 11.99% APR', icon: '💵' },
-            { name: 'Credit Cards', href: '/borrow/credit-cards', description: 'Rewards and low rates', icon: '💳' },
-            { name: 'Debt Consolidation', href: '/borrow/consolidation', description: 'Simplify your payments', icon: '📊' },
+            { name: 'Personal Loans', href: '/borrow/personal', description: 'Rates as low as 11.99% APR', icon: '/images/3d/glassmoney.png' },
+            { name: 'Credit Cards', href: '/borrow/credit-cards', description: 'Rewards and low rates', icon: '/images/3d/glasscreditcard.png' },
+            { name: 'Debt Consolidation', href: '/borrow/consolidation', description: 'Simplify your payments', icon: '/images/3d/glasschecklist.png' },
           ]
         },
         {
           title: 'Home & Auto',
           links: [
-            { name: 'Auto Loans', href: '/borrow/auto', description: 'New & used - 5.89% APR', icon: '🚗' },
-            { name: 'Mortgages', href: '/borrow/mortgage', description: 'Purchase or refinance', icon: '🏠' },
-            { name: 'Home Equity', href: '/borrow/home-equity', description: 'Access your home value', icon: '🔑' },
+            { name: 'Auto Loans', href: '/borrow/auto', description: 'New & used - 5.89% APR', icon: '/images/3d/glasscar.png' },
+            { name: 'Mortgages', href: '/borrow/mortgage', description: 'Purchase or refinance', icon: '/images/3d/glasshome.png' },
+            { name: 'Home Equity', href: '/borrow/home-equity', description: 'Access your home value', icon: '/images/3d/glasskeys.png' },
           ]
         }
       ]
     },
     invest: {
       title: 'Wealth & Retirement',
-      description: 'Plan for a secure financial future with expert guidance',
-      icon: '📈',
-      color: 'from-amber-500 to-amber-600',
+      description: 'Plan for a secure financial future',
+      icon: '/images/3d/glassinvestment.png',
       sections: [
         {
           title: 'Investment Services',
           links: [
-            { name: 'Wealth Management', href: '/invest/wealth', description: 'Personalized investment strategies', icon: '💼' },
-            { name: 'Investment Accounts', href: '/invest/accounts', description: 'Stocks, bonds & more', icon: '📊' },
-            { name: 'Financial Advisors', href: '/invest/advisors', description: 'Expert guidance', icon: '👔' },
+            { name: 'Wealth Management', href: '/invest/wealth', description: 'Personalized investment strategies', icon: '/images/3d/glassadvisor.png' },
+            { name: 'Investment Accounts', href: '/invest/accounts', description: 'Stocks, bonds & more', icon: '/images/3d/glassinvestment.png' },
+            { name: 'Financial Advisors', href: '/invest/advisors', description: 'Expert guidance', icon: '/images/3d/glasshandshake.png' },
           ]
         },
         {
           title: 'Retirement Planning',
           links: [
-            { name: 'Retirement Planning', href: '/invest/retirement', description: 'Plan your golden years', icon: '🌅' },
-            { name: 'IRAs', href: '/invest/iras', description: 'Traditional & Roth options', icon: '💰' },
-            { name: '401(k) Rollovers', href: '/invest/rollovers', description: 'Consolidate retirement funds', icon: '🔄' },
+            { name: 'Retirement Planning', href: '/invest/retirement', description: 'Plan your golden years', icon: '/images/3d/glassretire.png' },
+            { name: 'IRAs', href: '/invest/iras', description: 'Traditional & Roth options', icon: '/images/3d/glasssecure.png' },
+            { name: '401(k) Rollovers', href: '/invest/rollovers', description: 'Consolidate retirement funds', icon: '/images/3d/glassrollover.png' },
           ]
         }
       ]
     },
     insurance: {
       title: 'Protect What Matters',
-      description: 'Comprehensive insurance solutions for peace of mind',
-      icon: '🛡️',
-      color: 'from-red-500 to-red-600',
+      description: 'Comprehensive insurance solutions',
+      icon: '/images/3d/glassshield.png',
       sections: [
         {
           title: 'Personal Insurance',
           links: [
-            { name: 'Life Insurance', href: '/insurance/life', description: 'Protect your family', icon: '❤️' },
-            { name: 'Home Insurance', href: '/insurance/home', description: 'Safeguard your home', icon: '🏠' },
-            { name: 'Auto Insurance', href: '/insurance/auto', description: 'Coverage for your vehicle', icon: '🚗' },
+            { name: 'Life Insurance', href: '/insurance/life', description: 'Protect your family', icon: '/images/3d/glassheart.png' },
+            { name: 'Home Insurance', href: '/insurance/home', description: 'Safeguard your home', icon: '/images/3d/glasshome.png' },
+            { name: 'Auto Insurance', href: '/insurance/auto', description: 'Coverage for your vehicle', icon: '/images/3d/glasscar.png' },
           ]
         },
         {
           title: 'Business Insurance',
           links: [
-            { name: 'Business Insurance', href: '/insurance/business', description: 'Protect your company', icon: '🏢' },
-            { name: 'Liability Coverage', href: '/insurance/liability', description: 'General liability', icon: '⚖️' },
-            { name: 'Workers Comp', href: '/insurance/workers-comp', description: 'Employee protection', icon: '👥' },
+            { name: 'Business Insurance', href: '/insurance/business', description: 'Protect your company', icon: '/images/3d/glassbuilding.png' },
+            { name: 'Liability Coverage', href: '/insurance/liability', description: 'General liability', icon: '/images/3d/glassshield.png' },
+            { name: 'Workers Comp', href: '/insurance/workers-comp', description: 'Employee protection', icon: '/images/3d/glasspeople.png' },
           ]
         }
       ]
     },
     learn: {
       title: 'Learn & Plan',
-      description: 'Financial education and tools to help you succeed',
-      icon: '📚',
-      color: 'from-teal-500 to-teal-600',
+      description: 'Financial education and tools',
+      icon: '/images/3d/glassbook.png',
       sections: [
         {
           title: 'Education',
           links: [
-            { name: 'Financial Education', href: '/learn/education', description: 'Articles & guides', icon: '📖' },
-            { name: 'Blog', href: '/learn/blog', description: 'Latest insights', icon: '✍️' },
-            { name: 'Videos', href: '/learn/videos', description: 'Watch and learn', icon: '🎥' },
+            { name: 'Financial Education', href: '/learn/education', description: 'Articles & guides', icon: '/images/3d/glassbook.png' },
+            { name: 'Blog', href: '/learn/blog', description: 'Latest insights', icon: '/images/3d/glassblog.png' },
+            { name: 'Videos', href: '/learn/videos', description: 'Watch and learn', icon: '/images/3d/glassvideo.png' },
           ]
         },
         {
           title: 'Tools',
           links: [
-            { name: 'Calculators', href: '/learn/calculators', description: 'Plan your finances', icon: '🧮' },
-            { name: 'Budget Planner', href: '/learn/budget', description: 'Create a budget', icon: '📊' },
-            { name: 'Resources', href: '/learn/resources', description: 'Helpful tools', icon: '🔧' },
+            { name: 'Calculators', href: '/learn/calculators', description: 'Plan your finances', icon: '/images/3d/glasscalculator.png' },
+            { name: 'Budget Planner', href: '/learn/budget', description: 'Create a budget', icon: '/images/3d/glasschecklist.png' },
+            { name: 'Resources', href: '/learn/resources', description: 'Helpful tools', icon: '/images/3d/glassresources.png' },
           ]
         }
       ]
     },
     payments: {
       title: 'Payments & Transfers',
-      description: 'Fast, secure ways to send and receive money',
-      icon: '💸',
-      color: 'from-indigo-500 to-indigo-600',
+      description: 'Fast, secure ways to send money',
+      icon: '/images/3d/glasspayment.png',
       sections: [
         {
           title: 'Send Money',
           links: [
-            { name: 'Wire Transfers', href: '/payments/wire', description: 'Domestic & international', icon: '🌐' },
-            { name: 'Send Money', href: '/payments/send', description: 'Quick transfers', icon: '📱' },
-            { name: 'International Payments', href: '/payments/international', description: 'Global transfers', icon: '🌍' },
+            { name: 'Wire Transfers', href: '/payments/wire', description: 'Domestic & international', icon: '/images/3d/glasswire.png' },
+            { name: 'Send Money', href: '/payments/send', description: 'Quick transfers', icon: '/images/3d/glasssend.png' },
+            { name: 'International Payments', href: '/payments/international', description: 'Global transfers', icon: '/images/3d/glassglobal.png' },
           ]
         },
         {
           title: 'Manage Payments',
           links: [
-            { name: 'Bill Pay', href: '/payments/bill-pay', description: 'Pay bills online', icon: '📄' },
-            { name: 'Scheduled Payments', href: '/payments/scheduled', description: 'Set up recurring', icon: '⏰' },
-            { name: 'Payment History', href: '/payments/history', description: 'View transactions', icon: '📋' },
+            { name: 'Bill Pay', href: '/payments/bill-pay', description: 'Pay bills online', icon: '/images/3d/glassbill.png' },
+            { name: 'Scheduled Payments', href: '/payments/scheduled', description: 'Set up recurring', icon: '/images/3d/glasscalendar.png' },
+            { name: 'Payment History', href: '/payments/history', description: 'View transactions', icon: '/images/3d/glasshistory.png' },
           ]
         }
       ]
@@ -296,9 +289,9 @@ export function Header() {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_3s_infinite]"></div>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
-              <span className="font-semibold">Routing # 655205039</span>
-              <span className="text-white/70 hidden sm:inline">|</span>
-              <span className="text-white/90 hidden sm:inline">24/7 Customer Support</span>
+              <span className="font-semibold animate-pulse">Routing # 655205039</span>
+              <span className="text-white/70 hidden sm:inline animate-pulse">|</span>
+              <span className="text-white/90 hidden sm:inline animate-pulse">24/7 Customer Support</span>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-white/90">Mon-Fri: 8:30-6:00 | Sat: 9:00-1:00</span>
@@ -345,7 +338,7 @@ export function Header() {
                     >
                       <Link
                         href={item.href}
-                        className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-md inline-flex items-center ${
+                        className={`relative px-3 py-2 text-sm font-medium transition-all duration-300 rounded-md inline-flex items-center ${
                           active 
                             ? 'text-soft-gold' 
                             : 'text-gray-700 hover:text-soft-gold'
@@ -370,60 +363,76 @@ export function Header() {
                         )}
                       </Link>
 
-                      {/* Beautiful Modern Fintech Dropdown */}
+                      {/* Beautiful Dropdown with Brand Colors */}
                       {item.hasDropdown && activeDropdown === item.dropdownId && (
                         <div
                           ref={dropdownRef}
                           onMouseEnter={handleDropdownMouseEnter}
                           onMouseLeave={handleDropdownMouseLeave}
-                          className="absolute top-full left-1/2 transform -translate-x-1/2 mt-4 w-[800px] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-[fadeIn_0.3s_ease-out]"
+                          className="absolute top-full left-1/2 transform -translate-x-1/2 mt-4 w-[750px] bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-[fadeInDropdown_0.3s_ease-out]"
                         >
-                          {/* Header with gradient */}
-                          <div className={`bg-gradient-to-r ${dropdownContent[item.dropdownId as keyof typeof dropdownContent].color} px-8 py-6`}>
-                            <div className="flex items-center space-x-4">
-                              <span className="text-4xl">{dropdownContent[item.dropdownId as keyof typeof dropdownContent].icon}</span>
+                          {/* Header with Deep Teal gradient and burnt orange accent */}
+                          <div className="bg-gradient-to-r from-deep-teal to-deep-teal/90 px-8 py-5 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-soft-gold/10 rounded-full -mr-16 -mt-16"></div>
+                            <div className="absolute bottom-0 left-0 w-24 h-24 bg-burnt-orange/10 rounded-full -ml-12 -mb-12"></div>
+                            <div className="flex items-center space-x-4 relative z-10">
+                              <div className="relative w-14 h-14">
+                                <Image
+                                  src={dropdownContent[item.dropdownId as keyof typeof dropdownContent].icon}
+                                  alt={item.name}
+                                  width={56}
+                                  height={56}
+                                  className="w-full h-full object-contain drop-shadow-xl"
+                                />
+                              </div>
                               <div>
-                                <h3 className="text-2xl font-bold text-white mb-1">
+                                <h3 className="text-xl font-bold text-white mb-1">
                                   {dropdownContent[item.dropdownId as keyof typeof dropdownContent].title}
                                 </h3>
-                                <p className="text-white/90 text-sm">
+                                <p className="text-white/80 text-sm">
                                   {dropdownContent[item.dropdownId as keyof typeof dropdownContent].description}
                                 </p>
                               </div>
                             </div>
                           </div>
 
-                          {/* Content Grid */}
-                          <div className="p-8">
-                            <div className="grid grid-cols-2 gap-8">
+                          {/* Two-column Content Grid */}
+                          <div className="p-6">
+                            <div className="grid grid-cols-2 gap-6">
                               {dropdownContent[item.dropdownId as keyof typeof dropdownContent].sections.map((section, idx) => (
                                 <div key={idx}>
-                                  <h4 className="text-sm font-semibold text-deep-teal uppercase tracking-wider mb-4">
+                                  <h4 className="text-xs font-semibold text-deep-teal uppercase tracking-wider mb-3">
                                     {section.title}
                                   </h4>
-                                  <div className="space-y-4">
+                                  <div className="space-y-2">
                                     {section.links.map((link) => (
                                       <Link
                                         key={link.href}
                                         href={link.href}
-                                        className="group flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-all duration-300"
+                                        className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-all duration-300 group"
                                         onClick={() => {
                                           setActiveDropdown(null)
                                           setHoveredItem(null)
                                         }}
                                       >
-                                        <span className="text-2xl group-hover:scale-110 transition-transform duration-300">
-                                          {link.icon}
-                                        </span>
-                                        <div className="flex-1">
-                                          <p className="text-sm font-semibold text-gray-900 group-hover:text-soft-gold transition-colors">
+                                        <div className="relative w-8 h-8 flex-shrink-0">
+                                          <Image
+                                            src={link.icon}
+                                            alt={link.name}
+                                            width={32}
+                                            height={32}
+                                            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                                          />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-medium text-gray-900 group-hover:text-soft-gold transition-colors">
                                             {link.name}
                                           </p>
-                                          <p className="text-xs text-gray-500 mt-1">
+                                          <p className="text-xs text-gray-500 truncate">
                                             {link.description}
                                           </p>
                                         </div>
-                                        <svg className="w-5 h-5 text-gray-400 group-hover:text-soft-gold group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-4 h-4 text-gray-400 group-hover:text-soft-gold group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                         </svg>
                                       </Link>
@@ -434,8 +443,9 @@ export function Header() {
                             </div>
                           </div>
 
-                          {/* Footer */}
-                          <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
+                          {/* Footer with Sage Green */}
+                          <div className="bg-sage/5 px-6 py-3 border-t border-gray-100 flex justify-between items-center">
+                            <span className="text-xs text-gray-500">24/7 customer support</span>
                             <Link
                               href={item.href}
                               className="text-sm text-deep-teal hover:text-soft-gold font-medium inline-flex items-center group"
@@ -445,7 +455,7 @@ export function Header() {
                               }}
                             >
                               View all {item.name.toLowerCase()} options
-                              <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                               </svg>
                             </Link>
@@ -524,7 +534,7 @@ export function Header() {
               <div className="pt-4 space-y-3">
                 <Link
                   href="/auth/login"
-                  className="relative block w-full py-3 text-center font-semibold text-white bg-deep-teal overflow-hidden group rounded-none hover:bg-deep-teal/90 transition-all duration-200"
+                  className="relative block w-full py-3 text-center font-semibold text-white bg-deep-teal overflow-hidden group rounded-md hover:bg-deep-teal/90 transition-all duration-200"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
@@ -533,7 +543,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="relative block w-full py-3 text-center font-semibold text-white bg-sage overflow-hidden group rounded-none hover:bg-sage/90 transition-all duration-200"
+                  className="relative block w-full py-3 text-center font-semibold text-white bg-sage overflow-hidden group rounded-md hover:bg-sage/90 transition-all duration-200"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
@@ -550,7 +560,7 @@ export function Header() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex w-full">
         <Link
           href="/auth/login"
-          className="relative flex-1 py-5 text-center font-bold text-white bg-deep-teal overflow-hidden group transition-all duration-200 text-base tracking-wider"
+          className="relative flex-1 py-5 text-center font-bold text-white bg-deep-teal overflow-hidden group transition-all duration-200 text-base tracking-wider rounded-none"
         >
           <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
           <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
@@ -559,7 +569,7 @@ export function Header() {
         </Link>
         <Link
           href="/auth/signup"
-          className="relative flex-1 py-5 text-center font-bold text-white bg-sage overflow-hidden group transition-all duration-200 text-base tracking-wider"
+          className="relative flex-1 py-5 text-center font-bold text-white bg-sage overflow-hidden group transition-all duration-200 text-base tracking-wider rounded-none"
         >
           <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
           <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
@@ -586,11 +596,22 @@ export function Header() {
         @keyframes fadeIn {
           from {
             opacity: 0;
-            transform: translateY(-10px);
+            transform: translateX(-10px);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes fadeInDropdown {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -10px);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, 0);
           }
         }
         
