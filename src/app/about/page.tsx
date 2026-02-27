@@ -66,23 +66,39 @@ export default function AboutPage() {
                 {
                   title: "Trust",
                   description: "We build lasting relationships through honesty, transparency, and integrity in everything we do.",
-                  icon: "🤝"
+                  icon: "/images/3d/glasstrust.png",
+                  alt: "Trust Icon"
                 },
                 {
                   title: "Community",
                   description: "We're committed to the communities we serve, supporting local initiatives and economic growth.",
-                  icon: "🏘️"
+                  icon: "/images/3d/glasscommunity.png",
+                  alt: "Community Icon"
                 },
                 {
                   title: "Innovation",
                   description: "We embrace technology to provide modern, convenient banking solutions for our customers.",
-                  icon: "💡"
+                  icon: "/images/3d/glassinnovation.png",
+                  alt: "Innovation Icon"
                 }
               ].map((item, index) => (
                 <ScrollAnimation key={index} animation="fadeInUp" delay={0.1 * (index + 1)}>
-                  <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center">
-                    <div className="text-5xl mb-4">{item.icon}</div>
-                    <h3 className="text-2xl font-bold text-deep-teal mb-3">{item.title}</h3>
+                  <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center group">
+                    <div className="relative w-24 h-24 mx-auto mb-4">
+                      {/* Glow effect */}
+                      <div className="absolute inset-0 bg-soft-gold/20 rounded-full blur-2xl scale-75 group-hover:scale-110 transition-all duration-500"></div>
+                      {/* 3D Glass Icon */}
+                      <div className="relative w-full h-full group-hover:scale-110 transition-transform duration-500">
+                        <Image
+                          src={item.icon}
+                          alt={item.alt}
+                          width={96}
+                          height={96}
+                          className="w-full h-full object-contain drop-shadow-2xl"
+                        />
+                      </div>
+                    </div>
+                    <h3 className="text-2xl font-bold text-deep-teal mb-3 group-hover:text-soft-gold transition-colors">{item.title}</h3>
                     <p className="text-gray-600">{item.description}</p>
                   </div>
                 </ScrollAnimation>
