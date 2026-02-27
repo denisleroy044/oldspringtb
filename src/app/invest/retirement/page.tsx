@@ -35,7 +35,7 @@ export default function RetirementPlanningPage() {
               <div className="flex justify-center">
                 <div className="relative w-[400px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
-                    src="https://images.unsplash.com/photo-1559334417-5b674bcd3f5e?w=800&auto=format&fit=crop"
+                    src="/images/invest/retirement-couple.jpg"
                     alt="Happy retired couple"
                     width={800}
                     height={600}

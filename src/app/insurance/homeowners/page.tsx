@@ -35,7 +35,7 @@ export default function HomeownersPage() {
               <div className="flex justify-center">
                 <div className="relative w-[400px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
-                    src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&auto=format&fit=crop"
+                    src="/images/insurance/family-home.jpg"
                     alt="Happy family in front of their home"
                     width={800}
                     height={600}

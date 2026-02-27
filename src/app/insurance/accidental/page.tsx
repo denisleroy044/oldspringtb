@@ -35,7 +35,7 @@ export default function AccidentalDeathPage() {
               <div className="flex justify-center">
                 <div className="relative w-[400px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
-                    src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&auto=format&fit=crop"
+                    src="/images/insurance/family-time.jpg"
                     alt="Family spending time together"
                     width={800}
                     height={600}

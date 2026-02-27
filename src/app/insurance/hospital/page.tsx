@@ -35,7 +35,7 @@ export default function HospitalPage() {
               <div className="flex justify-center">
                 <div className="relative w-[400px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
-                    src="https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=800&auto=format&fit=crop"
+                    src="/images/insurance/doctor-patient.jpg"
                     alt="Doctor consulting with patient"
                     width={800}
                     height={600}

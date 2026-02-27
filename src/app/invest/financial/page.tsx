@@ -35,7 +35,7 @@ export default function FinancialPlanningPage() {
               <div className="flex justify-center">
                 <div className="relative w-[400px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
-                    src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&auto=format&fit=crop"
+                    src="/images/invest/financial-planning.jpg"
                     alt="Financial planning meeting"
                     width={800}
                     height={600}

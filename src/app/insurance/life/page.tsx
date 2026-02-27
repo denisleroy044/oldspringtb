@@ -35,7 +35,7 @@ export default function LifeInsurancePage() {
               <div className="flex justify-center">
                 <div className="relative w-[400px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
-                    src="https://images.unsplash.com/photo-1609220136736-443140cffec6?w=800&auto=format&fit=crop"
+                    src="/images/insurance/happy-family.jpg"
                     alt="Happy family"
                     width={800}
                     height={600}

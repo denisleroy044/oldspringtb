@@ -35,7 +35,7 @@ export default function MedicarePage() {
               <div className="flex justify-center">
                 <div className="relative w-[400px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
-                    src="https://images.unsplash.com/photo-1579684288335-ed1f9c9d7ea2?w=800&auto=format&fit=crop"
+                    src="/images/insurance/medicare-specialist.jpg"
                     alt="Senior couple with Medicare specialist"
                     width={800}
                     height={600}

@@ -35,7 +35,7 @@ export default function EstatePlanningPage() {
               <div className="flex justify-center">
                 <div className="relative w-[400px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
-                    src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=800&auto=format&fit=crop"
+                    src="/images/invest/estate-planning.jpg"
                     alt="Family planning together"
                     width={800}
                     height={600}

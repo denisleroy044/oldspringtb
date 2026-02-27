@@ -35,7 +35,7 @@ export default function IRAPage() {
               <div className="flex justify-center">
                 <div className="relative w-[400px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
-                    src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&auto=format&fit=crop"
+                    src="/images/invest/ira-rollover.jpg"
                     alt="Financial advisor helping with retirement planning"
                     width={800}
                     height={600}

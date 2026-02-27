@@ -62,7 +62,7 @@ export default function InvestmentTeamPage() {
               <div className="flex justify-center">
                 <div className="relative w-[400px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
-                    src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&auto=format&fit=crop"
+                    src="/images/invest/team-meeting.jpg"
                     alt="Financial advisors meeting with clients"
                     width={800}
                     height={600}

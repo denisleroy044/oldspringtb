@@ -35,7 +35,7 @@ export default function AutoInsurancePage() {
               <div className="flex justify-center">
                 <div className="relative w-[400px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
-                    src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&auto=format&fit=crop"
+                    src="/images/insurance/happy-family-car.jpg"
                     alt="Happy family with their car"
                     width={800}
                     height={600}

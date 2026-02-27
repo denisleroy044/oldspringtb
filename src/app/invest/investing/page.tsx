@@ -35,7 +35,7 @@ export default function OnlineInvestingPage() {
               <div className="flex justify-center">
                 <div className="relative w-[400px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
-                    src="https://images.unsplash.com/photo-1559526324-593bc073d938?w=800&auto=format&fit=crop"
+                    src="/images/invest/online-investing.jpg"
                     alt="Person using mobile banking app"
                     width={800}
                     height={600}
