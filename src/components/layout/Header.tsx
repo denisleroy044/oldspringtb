@@ -41,7 +41,7 @@ export function Header() {
           setActiveDropdown(null)
           setHoveredItem(null)
         }
-      }, 100)
+      }, 200)
     }
   }
 
@@ -59,7 +59,7 @@ export function Header() {
           setActiveDropdown(null)
           setHoveredItem(null)
         }
-      }, 100)
+      }, 200)
     }
   }
 
@@ -109,11 +109,12 @@ export function Header() {
     { name: 'PAYMENTS', href: '/payments', hasDropdown: true, dropdownId: 'payments' },
   ]
 
-  // Clean, minimal dropdown content
+  // Dropdown content with all links connected to existing pages
   const dropdownContent = {
     bank: {
       title: 'Banking',
       description: 'Personal and business banking solutions',
+      gradient: 'from-blue-600 to-blue-400',
       sections: [
         {
           title: 'Personal Banking',
@@ -136,6 +137,7 @@ export function Header() {
     save: {
       title: 'Save',
       description: 'Savings accounts for every goal',
+      gradient: 'from-green-600 to-green-400',
       sections: [
         {
           title: 'Savings Accounts',
@@ -158,6 +160,7 @@ export function Header() {
     borrow: {
       title: 'Borrow',
       description: 'Loans and credit options',
+      gradient: 'from-purple-600 to-purple-400',
       sections: [
         {
           title: 'Personal Loans',
@@ -180,11 +183,12 @@ export function Header() {
     invest: {
       title: 'Invest',
       description: 'Wealth management and retirement planning',
+      gradient: 'from-amber-600 to-amber-400',
       sections: [
         {
           title: 'Investment Services',
           links: [
-            { name: 'Wealth Management', href: '/invest/wealth', description: 'Personalized investment strategies' },
+            { name: 'Our Investment Team', href: '/invest/team', description: 'Meet our experienced financial advisors' },
             { name: 'Investment Accounts', href: '/invest/accounts', description: 'Stocks, bonds & more' },
             { name: 'Financial Advisors', href: '/invest/advisors', description: 'Expert guidance' },
           ]
@@ -193,8 +197,8 @@ export function Header() {
           title: 'Retirement Planning',
           links: [
             { name: 'Retirement Planning', href: '/invest/retirement', description: 'Plan your golden years' },
-            { name: 'IRAs', href: '/invest/iras', description: 'Traditional & Roth options' },
-            { name: '401(k) Rollovers', href: '/invest/rollovers', description: 'Consolidate retirement funds' },
+            { name: 'IRA Rollover', href: '/invest/ira', description: 'Simplify your retirement savings' },
+            { name: 'Estate Planning', href: '/invest/estate', description: 'Plan for the future of your legacy' },
           ]
         }
       ]
@@ -202,21 +206,22 @@ export function Header() {
     insurance: {
       title: 'Insurance',
       description: 'Protect what matters most',
+      gradient: 'from-red-600 to-red-400',
       sections: [
         {
           title: 'Personal Insurance',
           links: [
-            { name: 'Life Insurance', href: '/insurance/life', description: 'Protect your family' },
-            { name: 'Home Insurance', href: '/insurance/home', description: 'Safeguard your home' },
+            { name: 'Life Insurance', href: '/insurance/life', description: 'Protect your loved ones' },
+            { name: 'Homeowners Insurance', href: '/insurance/homeowners', description: 'Safeguard your home' },
             { name: 'Auto Insurance', href: '/insurance/auto', description: 'Coverage for your vehicle' },
           ]
         },
         {
-          title: 'Business Insurance',
+          title: 'Health & Other',
           links: [
-            { name: 'Business Insurance', href: '/insurance/business', description: 'Protect your company' },
-            { name: 'Liability Coverage', href: '/insurance/liability', description: 'General liability' },
-            { name: 'Workers Comp', href: '/insurance/workers-comp', description: 'Employee protection' },
+            { name: 'Medicare Insurance', href: '/insurance/medicare', description: 'Navigate Medicare with confidence' },
+            { name: 'Hospital Insurance', href: '/insurance/hospital', description: 'Help cover hospital costs' },
+            { name: 'Accidental Death', href: '/insurance/accidental', description: 'Additional protection for unexpected events' },
           ]
         }
       ]
@@ -224,21 +229,22 @@ export function Header() {
     learn: {
       title: 'Learn',
       description: 'Financial education and tools',
+      gradient: 'from-teal-600 to-teal-400',
       sections: [
         {
-          title: 'Education',
+          title: 'Starting Out',
           links: [
-            { name: 'Financial Education', href: '/learn/education', description: 'Articles & guides' },
-            { name: 'Blog', href: '/learn/blog', description: 'Latest insights' },
-            { name: 'Videos', href: '/learn/videos', description: 'Watch and learn' },
+            { name: 'Tax Checklist', href: '/learn/tax-checklist', description: '5 things to remember for tax season' },
+            { name: 'Manage Your Checking', href: '/learn/manage-checking', description: 'Simple ways to manage your account' },
+            { name: 'Save for Vacation', href: '/learn/save-vacation', description: 'Tips to save for summer vacation' },
           ]
         },
         {
-          title: 'Tools',
+          title: 'Personal Finance',
           links: [
-            { name: 'Calculators', href: '/learn/calculators', description: 'Plan your finances' },
-            { name: 'Budget Planner', href: '/learn/budget', description: 'Create a budget' },
-            { name: 'Resources', href: '/learn/resources', description: 'Helpful tools' },
+            { name: 'First-Time Home Buyer', href: '/learn/home-buying', description: 'Guide to buying your first home' },
+            { name: 'Understanding Credit', href: '/learn/credit-scores', description: 'What affects your credit score' },
+            { name: 'Teaching Kids About Money', href: '/learn/kids-money', description: 'Age-appropriate financial lessons' },
           ]
         }
       ]
@@ -246,21 +252,22 @@ export function Header() {
     payments: {
       title: 'Payments',
       description: 'Send and receive money',
+      gradient: 'from-indigo-600 to-indigo-400',
       sections: [
         {
-          title: 'Send Money',
+          title: 'Make a Payment',
           links: [
-            { name: 'Wire Transfers', href: '/payments/wire', description: 'Domestic & international' },
-            { name: 'Send Money', href: '/payments/send', description: 'Quick transfers' },
-            { name: 'International Payments', href: '/payments/international', description: 'Global transfers' },
+            { name: 'Auto Loan Center', href: '/payments/auto-loan', description: 'Manage your auto loan payments' },
+            { name: 'One Time Payment', href: '/payments/one-time', description: 'Quick payment without logging in' },
+            { name: 'Pay by Mail', href: '/payments/mail', description: 'Send payment to our lockbox' },
           ]
         },
         {
-          title: 'Manage Payments',
+          title: 'Other Options',
           links: [
-            { name: 'Bill Pay', href: '/payments/bill-pay', description: 'Pay bills online' },
-            { name: 'Scheduled Payments', href: '/payments/scheduled', description: 'Set up recurring' },
-            { name: 'Payment History', href: '/payments/history', description: 'View transactions' },
+            { name: 'Pay at Branch', href: '/payments/branch', description: 'Visit us at any branch location' },
+            { name: 'Wire Transfers', href: '/payments/wire', description: 'Domestic & international transfers' },
+            { name: 'Scheduled Payments', href: '/payments/scheduled', description: 'Set up recurring payments' },
           ]
         }
       ]
@@ -309,8 +316,8 @@ export function Header() {
                 </div>
               </Link>
 
-              {/* Desktop Navigation - Organized Links */}
-              <div className="hidden lg:flex items-center space-x-2">
+              {/* Desktop Navigation */}
+              <div className="hidden lg:flex items-center space-x-1">
                 {navItems.map((item) => {
                   const active = isActiveLink(item.href)
                   
@@ -391,33 +398,38 @@ export function Header() {
           </nav>
         </div>
 
-        {/* Clean Minimal Dropdown */}
+        {/* Sophisticated Gradient Dropdown */}
         {activeDropdown && (
           <div
             ref={dropdownRef}
             onMouseEnter={handleDropdownMouseEnter}
             onMouseLeave={handleDropdownMouseLeave}
-            className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-[750px] bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-[fadeInDropdown_0.2s_ease-out]"
+            className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-[800px] bg-white rounded-2xl shadow-2xl overflow-hidden z-50 animate-[fadeInDropdown_0.2s_ease-out]"
           >
-            {/* Simple header with just text */}
-            <div className="px-8 pt-6 pb-2">
-              <h3 className="text-lg font-semibold text-deep-teal">
-                {dropdownContent[activeDropdown as keyof typeof dropdownContent].title}
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {dropdownContent[activeDropdown as keyof typeof dropdownContent].description}
-              </p>
+            {/* Gradient Header with Sophisticated Design */}
+            <div className={`bg-gradient-to-r ${dropdownContent[activeDropdown as keyof typeof dropdownContent].gradient} px-8 py-6 relative overflow-hidden`}>
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16"></div>
+              <div className="relative">
+                <h3 className="text-2xl font-bold text-white mb-1">
+                  {dropdownContent[activeDropdown as keyof typeof dropdownContent].title}
+                </h3>
+                <p className="text-white/90 text-sm">
+                  {dropdownContent[activeDropdown as keyof typeof dropdownContent].description}
+                </p>
+              </div>
             </div>
 
-            {/* Clean two-column grid with organized spacing */}
-            <div className="px-8 py-4">
-              <div className="grid grid-cols-2 gap-x-10 gap-y-6">
+            {/* Two-column Content Grid with Subtle Gradient Background */}
+            <div className="p-8 bg-gradient-to-br from-gray-50 to-white">
+              <div className="grid grid-cols-2 gap-x-12 gap-y-8">
                 {dropdownContent[activeDropdown as keyof typeof dropdownContent].sections.map((section, idx) => (
                   <div key={idx}>
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
                       {section.title}
                     </h4>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {section.links.map((link) => (
                         <Link
                           key={link.href}
@@ -442,8 +454,8 @@ export function Header() {
               </div>
             </div>
 
-            {/* Simple footer with view all link */}
-            <div className="px-8 py-4 bg-gray-50/80 border-t border-gray-100">
+            {/* Footer with Gradient */}
+            <div className="bg-gradient-to-r from-gray-100 to-gray-50 px-8 py-4 border-t border-gray-200">
               <Link
                 href={`/${activeDropdown}`}
                 className="text-sm text-deep-teal hover:text-soft-gold font-medium inline-flex items-center group"
