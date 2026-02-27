@@ -1,3 +1,5 @@
+'use client'
+
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import Link from 'next/link'
@@ -21,18 +23,27 @@ export default function OnlineBankingPage() {
               <h1 className="text-4xl font-bold text-[#1e3a5f] mb-4">Online & Mobile Banking</h1>
               <p className="text-xl text-gray-600 mb-6">Bank anytime, anywhere with our secure digital banking platform. Manage your finances from the palm of your hand.</p>
               <div className="flex space-x-4">
-                <button className="bg-[#FF8C00] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#E67E00] transition">Enroll Now</button>
-                <button className="border-2 border-[#1e3a5f] text-[#1e3a5f] px-6 py-3 rounded-lg font-semibold hover:bg-[#1e3a5f] hover:text-white transition">Learn More</button>
+                <button className="group relative px-6 py-3 bg-[#FF8C00] text-white font-semibold rounded-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:bg-[#E67E00] hover:scale-105 hover:-translate-y-1">
+                  <span className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/40 to-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  <span className="relative">Enroll Now</span>
+                </button>
+                <button className="group relative px-6 py-3 bg-[#2E8B57] text-white font-semibold rounded-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:bg-[#267A48] hover:scale-105 hover:-translate-y-1">
+                  <span className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/40 to-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  <span className="relative">Learn More</span>
+                </button>
               </div>
             </div>
-            <div className="flex justify-center">
-              <div className="relative w-80 h-80">
+            <div className="flex justify-center relative group">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-soft-gold/20 rounded-full blur-3xl scale-75 group-hover:scale-110 transition-all duration-700"></div>
+              {/* 3D Glass Mobile Icon */}
+              <div className="relative w-80 h-80 group-hover:scale-105 transition-transform duration-500">
                 <Image
-                  src="/images/3d/glassmobile.png"
+                  src="/images/3d/glassmobilephone.png"
                   alt="Mobile Banking"
                   width={320}
                   height={320}
-                  className="object-contain drop-shadow-2xl"
+                  className="w-full h-full object-contain drop-shadow-2xl animate-float"
                   priority
                 />
               </div>
@@ -42,33 +53,60 @@ export default function OnlineBankingPage() {
           <h2 className="text-3xl font-bold text-[#1e3a5f] mb-8 text-center">Key Features</h2>
           
           <div className="grid md:grid-cols-3 gap-8 mb-12">
-            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-[#1e3a5f]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
+            <div className="bg-white rounded-xl shadow-lg p-8 text-center group hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <div className="relative w-24 h-24 mx-auto mb-4">
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-soft-gold/20 rounded-full blur-2xl scale-75 group-hover:scale-110 transition-all duration-500"></div>
+                {/* 3D Glass Mobile Phone Icon */}
+                <div className="relative w-full h-full group-hover:scale-110 transition-transform duration-500">
+                  <Image
+                    src="/images/3d/glassmobilephone.png"
+                    alt="Mobile App"
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-contain drop-shadow-2xl"
+                  />
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-[#1e3a5f] mb-3">Mobile App</h3>
+              <h3 className="text-xl font-bold text-[#1e3a5f] mb-3 group-hover:text-[#FF8C00] transition-colors">Mobile App</h3>
               <p className="text-gray-600">Check balances, transfer funds, and deposit checks from your smartphone.</p>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-[#2E8B57]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
+            <div className="bg-white rounded-xl shadow-lg p-8 text-center group hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <div className="relative w-24 h-24 mx-auto mb-4">
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-soft-gold/20 rounded-full blur-2xl scale-75 group-hover:scale-110 transition-all duration-500"></div>
+                {/* 3D Glass Safe Icon */}
+                <div className="relative w-full h-full group-hover:scale-110 transition-transform duration-500">
+                  <Image
+                    src="/images/3d/glasssafe.png"
+                    alt="Secure & Safe"
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-contain drop-shadow-2xl"
+                  />
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-[#1e3a5f] mb-3">Secure & Safe</h3>
+              <h3 className="text-xl font-bold text-[#1e3a5f] mb-3 group-hover:text-[#2E8B57] transition-colors">Secure & Safe</h3>
               <p className="text-gray-600">Bank with peace of mind using our advanced security features and encryption.</p>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-[#FF8C00]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+            <div className="bg-white rounded-xl shadow-lg p-8 text-center group hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <div className="relative w-24 h-24 mx-auto mb-4">
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-soft-gold/20 rounded-full blur-2xl scale-75 group-hover:scale-110 transition-all duration-500"></div>
+                {/* 3D Glass Account Icon */}
+                <div className="relative w-full h-full group-hover:scale-110 transition-transform duration-500">
+                  <Image
+                    src="/images/3d/glassaccount.png"
+                    alt="24/7 Access"
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-contain drop-shadow-2xl"
+                  />
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-[#1e3a5f] mb-3">24/7 Access</h3>
+              <h3 className="text-xl font-bold text-[#1e3a5f] mb-3 group-hover:text-[#FF8C00] transition-colors">24/7 Access</h3>
               <p className="text-gray-600">Bank on your schedule with around-the-clock access to your accounts.</p>
             </div>
           </div>
@@ -79,12 +117,27 @@ export default function OnlineBankingPage() {
             <div className="relative text-center">
               <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
               <p className="text-lg mb-6 max-w-2xl mx-auto">Enroll in online banking today and experience the future of banking.</p>
-              <button className="bg-[#FF8C00] text-white px-8 py-4 rounded-lg font-semibold hover:bg-[#E67E00] transition shadow-lg">
-                Enroll Now
+              <button className="group relative px-8 py-4 bg-[#FF8C00] text-white font-semibold rounded-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:bg-[#E67E00] hover:scale-105 hover:-translate-y-1">
+                <span className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/40 to-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                <span className="relative">Enroll Now</span>
               </button>
             </div>
           </div>
         </div>
+
+        {/* Add animation styles */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes float {
+              0% { transform: translateY(0px); }
+              50% { transform: translateY(-20px); }
+              100% { transform: translateY(0px); }
+            }
+            .animate-float {
+              animation: float 6s ease-in-out infinite;
+            }
+          `
+        }} />
       </main>
       <Footer />
     </>
