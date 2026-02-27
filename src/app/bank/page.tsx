@@ -2,15 +2,15 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon'
 import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
-import Icons from '@/components/ui/BankingIcons'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function BankPage() {
   return (
     <>
       <Header />
       <main className="min-h-screen bg-gray-50 overflow-hidden">
-        {/* Hero Section with Icon */}
+        {/* Hero Section with 3D Glass Icon */}
         <section className="py-20 bg-gradient-to-br from-[#1e3a5f] to-[#2E8B57]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -29,14 +29,20 @@ export default function BankPage() {
                 </div>
               </ScrollAnimation>
               <ScrollAnimation animation="fadeInRight">
-                <div className="flex justify-center">
-                  <AnimatedIcon 
-                    src="/images/illustrations/bank.svg" 
-                    alt="Banking Illustration"
-                    size={400}
-                    glowColor="rgba(255, 255, 255, 0.3)"
-                    hoverEffect="float"
-                  />
+                <div className="flex justify-center relative group">
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 bg-soft-gold/20 rounded-full blur-3xl scale-75 group-hover:scale-110 transition-all duration-700"></div>
+                  {/* 3D Glass Home Icon */}
+                  <div className="relative w-[400px] h-[400px] group-hover:scale-105 transition-transform duration-500">
+                    <Image
+                      src="/images/3d/glasshome.png"
+                      alt="Banking Illustration"
+                      width={400}
+                      height={400}
+                      className="w-full h-full object-contain drop-shadow-2xl animate-float"
+                      priority
+                    />
+                  </div>
                 </div>
               </ScrollAnimation>
             </div>
@@ -75,8 +81,18 @@ export default function BankPage() {
               <ScrollAnimation animation="fadeInUp" delay={0.1}>
                 <Link href="/bank/accounts" className="group">
                   <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover-lift">
-                    <div className="h-64 overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-                      <Icons.Bank className="w-24 h-24 text-[#1e3a5f] group-hover:scale-110 transition-transform duration-500" />
+                    <div className="h-64 overflow-hidden relative">
+                      {/* Aged person with business person image */}
+                      <Image
+                        src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&auto=format&fit=crop"
+                        alt="Senior business advisor helping client"
+                        width={800}
+                        height={400}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        unoptimized
+                      />
+                      {/* Overlay gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#1e3a5f]/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     </div>
                     <div className="p-8">
                       <h2 className="text-2xl font-bold text-[#1e3a5f] mb-3 group-hover:text-[#FF8C00] transition-colors">Oldspring Trust Accounts</h2>
@@ -95,8 +111,18 @@ export default function BankPage() {
               <ScrollAnimation animation="fadeInUp" delay={0.2}>
                 <Link href="/bank/online-banking" className="group">
                   <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover-lift">
-                    <div className="h-64 overflow-hidden bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
-                      <Icons.MobileBanking className="w-24 h-24 text-[#1e3a5f] group-hover:scale-110 transition-transform duration-500" />
+                    <div className="h-64 overflow-hidden relative">
+                      {/* Person looking at phone and smiling */}
+                      <Image
+                        src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=800&auto=format&fit=crop"
+                        alt="Happy person using mobile banking app"
+                        width={800}
+                        height={400}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        unoptimized
+                      />
+                      {/* Overlay gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#1e3a5f]/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     </div>
                     <div className="p-8">
                       <h2 className="text-2xl font-bold text-[#1e3a5f] mb-3 group-hover:text-[#2E8B57] transition-colors">Online & Mobile Banking</h2>
@@ -114,6 +140,18 @@ export default function BankPage() {
             </div>
           </div>
         </section>
+
+        {/* Add animation styles */}
+        <style jsx global>{`
+          @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+          }
+          .animate-float {
+            animation: float 6s ease-in-out infinite;
+          }
+        `}</style>
       </main>
       <Footer />
     </>
