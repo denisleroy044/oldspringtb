@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { jwtVerify } from 'jose'
+import jwt from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
@@ -44,9 +44,8 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    // Verify token
-    const secret = new TextEncoder().encode(JWT_SECRET)
-    await jwtVerify(token, secret)
+    // Verify token using jsonwebtoken (already installed)
+    jwt.verify(token, JWT_SECRET)
     return NextResponse.next()
   } catch (error) {
     // Invalid token, redirect to login
