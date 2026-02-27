@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 
 export default function ContactPage() {
@@ -46,32 +47,49 @@ export default function ContactPage() {
                 {
                   title: "Visit Us",
                   info: "100 Bishopsgate, London",
-                  icon: "📍",
+                  icon: "/images/3d/solidgoldlocation.png",
+                  alt: "Location",
                   link: "https://maps.google.com"
                 },
                 {
                   title: "Call Us",
                   info: "+44 (0)20 1234 5678",
-                  icon: "📞",
+                  icon: "/images/3d/glasstelephone.png",
+                  alt: "Telephone",
                   link: "tel:+442012345678"
                 },
                 {
                   title: "Email Us",
                   info: "support@oldspring.com",
-                  icon: "✉️",
+                  icon: "/images/3d/solidgoldmail.png",
+                  alt: "Email",
                   link: "mailto:support@oldspring.com"
                 },
                 {
                   title: "Branch Hours",
                   info: "Mon-Fri 8:30-6:00, Sat 9:00-1:00",
-                  icon: "🕒",
+                  icon: "/images/3d/solidgoldclock.png",
+                  alt: "Hours",
                   link: "#"
                 }
               ].map((item, index) => (
                 <ScrollAnimation key={index} animation="fadeInUp" delay={0.1 * (index + 1)}>
-                  <a href={item.link} className="block bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center">
-                    <div className="text-4xl mb-3">{item.icon}</div>
-                    <h3 className="text-lg font-bold text-deep-teal mb-2">{item.title}</h3>
+                  <a href={item.link} className="block bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center group">
+                    <div className="relative w-20 h-20 mx-auto mb-3">
+                      {/* Glow effect */}
+                      <div className="absolute inset-0 bg-soft-gold/20 rounded-full blur-2xl scale-75 group-hover:scale-110 transition-all duration-500"></div>
+                      {/* 3D Glass / Solid Gold Icon */}
+                      <div className="relative w-full h-full group-hover:scale-110 transition-transform duration-500">
+                        <Image
+                          src={item.icon}
+                          alt={item.alt}
+                          width={80}
+                          height={80}
+                          className="w-full h-full object-contain drop-shadow-2xl"
+                        />
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-bold text-deep-teal mb-2 group-hover:text-soft-gold transition-colors">{item.title}</h3>
                     <p className="text-gray-600 text-sm">{item.info}</p>
                   </a>
                 </ScrollAnimation>
