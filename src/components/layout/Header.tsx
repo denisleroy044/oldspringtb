@@ -163,7 +163,7 @@ export function Header() {
                         if (el) navItemRefs.current.set(item.name, el)
                         else navItemRefs.current.delete(item.name)
                       }}
-                      className="relative nav-item"
+                      className="relative"
                       onMouseEnter={() => {
                         if (item.hasDropdown && item.dropdownId) {
                           handleMouseEnter(item.dropdownId, item.name)
@@ -173,30 +173,18 @@ export function Header() {
                     >
                       <Link
                         href={item.href}
-                        className={`relative px-3 py-2 text-sm font-medium transition-all duration-300 ease-out rounded-md overflow-hidden group ${
+                        className={`relative px-3 py-2 text-sm font-medium transition-all duration-300 rounded-md inline-block ${
                           active 
                             ? 'text-soft-gold' 
                             : 'text-gray-700 hover:text-soft-gold'
                         }`}
-                        onClick={(e) => {
-                          if (item.hasDropdown) {
-                            e.preventDefault()
-                            if (activeDropdown === item.dropdownId) {
-                              setActiveDropdown(null)
-                              setHoveredItem(null)
-                            } else if (item.dropdownId) {
-                              setActiveDropdown(item.dropdownId)
-                              setHoveredItem(item.name)
-                            }
-                          }
-                        }}
                       >
-                        <span className={`absolute inset-0 bg-soft-gold/10 transform transition-transform duration-300 ease-out ${
+                        <span className={`absolute inset-0 bg-soft-gold/10 transform transition-transform duration-300 rounded-md ${
                           hoveredItem === item.name ? 'scale-100' : 'scale-0'
-                        } rounded-md`}></span>
+                        }`}></span>
                         
                         <span className={`relative inline-block transition-transform duration-300 ${
-                          hoveredItem === item.name ? 'scale-105 translate-y-[-1px]' : ''
+                          hoveredItem === item.name ? 'scale-105' : ''
                         }`}>
                           {item.name}
                         </span>
@@ -205,7 +193,7 @@ export function Header() {
                           <span className="absolute bottom-0 left-0 w-full h-0.5 bg-soft-gold"></span>
                         )}
                         
-                        <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-soft-gold transform transition-transform duration-300 ease-out ${
+                        <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-soft-gold transform transition-transform duration-300 ${
                           activeDropdown === item.dropdownId ? 'scale-x-100' : 'scale-x-0'
                         }`}></span>
                       </Link>
@@ -218,7 +206,7 @@ export function Header() {
               <div className="hidden lg:flex items-center space-x-0">
                 <Link
                   href="/auth/login"
-                  className="relative px-6 py-3 text-sm font-semibold text-white bg-deep-teal overflow-hidden group transition-all duration-300 border-0 rounded-none inline-block"
+                  className="relative px-6 py-3 text-sm font-semibold text-white bg-deep-teal overflow-hidden group transition-all duration-300 inline-block"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
@@ -227,7 +215,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="relative px-6 py-3 text-sm font-semibold text-white bg-sage overflow-hidden group transition-all duration-200 border-0 rounded-none inline-block"
+                  className="relative px-6 py-3 text-sm font-semibold text-white bg-sage overflow-hidden group transition-all duration-200 inline-block"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
@@ -307,7 +295,7 @@ export function Header() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex w-full">
         <Link
           href="/auth/login"
-          className="relative flex-1 py-5 text-center font-bold text-white bg-deep-teal overflow-hidden group transition-all duration-200 text-base tracking-wider rounded-none"
+          className="relative flex-1 py-5 text-center font-bold text-white bg-deep-teal overflow-hidden group transition-all duration-200 text-base tracking-wider"
         >
           <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
           <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
@@ -316,7 +304,7 @@ export function Header() {
         </Link>
         <Link
           href="/auth/signup"
-          className="relative flex-1 py-5 text-center font-bold text-white bg-sage overflow-hidden group transition-all duration-200 text-base tracking-wider rounded-none"
+          className="relative flex-1 py-5 text-center font-bold text-white bg-sage overflow-hidden group transition-all duration-200 text-base tracking-wider"
         >
           <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
           <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
