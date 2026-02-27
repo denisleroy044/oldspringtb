@@ -46,12 +46,25 @@ export default function LoginPage() {
         throw new Error(data.error || 'Invalid email or password')
       }
 
+      // Check if 2FA is required
+      if (data.requiresTwoFactor) {
+        // Store userId in session storage for OTP verification
+        sessionStorage.setItem('2fa_user_id', data.userId)
+        sessionStorage.setItem('2fa_email', formData.email)
+        
+        // Redirect to OTP verification page with 2FA purpose
+        router.push('/auth/verify-otp?purpose=2FA')
+        return
+      }
+
+      // Normal login without 2FA
       if (rememberMe) {
         localStorage.setItem('user', JSON.stringify(data.user))
       } else {
         sessionStorage.setItem('user', JSON.stringify(data.user))
       }
 
+      // Store token in cookie (already set by server)
       router.push('/dashboard')
     } catch (err: any) {
       setError(err.message || 'Failed to login')

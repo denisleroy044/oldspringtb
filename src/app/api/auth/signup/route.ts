@@ -1,20 +1,6 @@
 import { NextResponse } from 'next/server'
-
-// In-memory user storage (same as login)
-let users: any[] = [
-  {
-    id: '1',
-    firstName: 'Test',
-    lastName: 'User',
-    name: 'Test User',
-    email: 'user@example.com',
-    password: 'hashed_password',
-    role: 'USER',
-    twoFactorEnabled: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }
-]
+import bcrypt from 'bcryptjs'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
   try {
@@ -23,48 +9,96 @@ export async function POST(request: Request) {
     // Validate input
     if (!firstName || !lastName || !email || !phone || !password) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'All fields are required' },
         { status: 400 }
       )
     }
 
-    // Check if user exists
-    const existingUser = users.find(u => u.email === email)
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    })
+
     if (existingUser) {
       return NextResponse.json(
         { error: 'User with this email already exists' },
-        { status: 400 }
+        { status: 409 }
       )
     }
 
-    // Create new user
-    const newUser = {
-      id: `user_${Date.now()}`,
-      firstName,
-      lastName,
-      name: `${firstName} ${lastName}`,
-      email,
-      phone,
-      password: 'hashed_' + password, // In production, use bcrypt
-      role: accountType === 'business' ? 'BUSINESS' : 'USER',
-      twoFactorEnabled: false,
-      accountType,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10)
 
-    users.push(newUser)
+    // Create full name
+    const fullName = `${firstName} ${lastName}`
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = newUser
+    // Create user with all necessary fields
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name: fullName,
+        password: hashedPassword,
+        phone,
+        role: accountType === 'business' ? 'BUSINESS' : 'USER',
+        twoFactorEnabled: false,
+        
+        // Create default user preferences
+        preferences: {
+          create: {
+            emailEnabled: true,
+            pushEnabled: true,
+            smsEnabled: false,
+            theme: 'light',
+          }
+        },
+
+        // Create initial notification
+        notifications: {
+          create: {
+            title: 'Welcome to Oldspring Trust!',
+            message: 'Thank you for creating an account. We\'re excited to have you on board.',
+            type: 'SUCCESS',
+          }
+        }
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        phone: true,
+        createdAt: true,
+        preferences: true,
+      }
+    })
+
+    // Generate OTP for email verification
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+
+    // Store OTP in database
+    await prisma.oTPRequest.create({
+      data: {
+        code: otp,
+        purpose: 'ACCOUNT_OPENING',
+        expiresAt,
+        userId: user.id,
+        identifier: email,
+      }
+    })
+
+    // TODO: Send verification email with OTP
+    // await sendVerificationEmail(email, fullName, otp)
 
     return NextResponse.json(
       { 
-        message: 'User created successfully',
-        user: userWithoutPassword 
+        message: 'User created successfully. Please verify your email.',
+        user,
+        requiresVerification: true
       },
       { status: 201 }
     )
+
   } catch (error) {
     console.error('Signup error:', error)
     return NextResponse.json(

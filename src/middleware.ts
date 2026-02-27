@@ -1,33 +1,64 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { jwtVerify } from 'jose'
 
-export function middleware(request: NextRequest) {
-  const currentUser = request.cookies.get('current_user')?.value
-  const isAdmin = currentUser ? JSON.parse(currentUser).isAdmin : false
-  const path = request.nextUrl.pathname
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
-  // Public paths
-  if (path === '/auth/login' || path === '/auth/signup' || path === '/') {
+export async function middleware(request: NextRequest) {
+  const token = request.cookies.get('auth-token')?.value
+
+  // Public paths that don't require authentication
+  const publicPaths = [
+    '/auth/login',
+    '/auth/signup',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+    '/auth/verify-otp',
+    '/',
+    '/about',
+    '/services',
+    '/contact',
+    '/news',
+    '/learn',
+    '/bank',
+    '/save',
+    '/borrow',
+    '/invest',
+    '/insurance',
+    '/payments',
+    '/api/auth',
+  ]
+
+  const isPublicPath = publicPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  )
+
+  // Allow public paths without token
+  if (isPublicPath) {
     return NextResponse.next()
   }
 
-  // Protect admin routes
-  if (path.startsWith('/admin')) {
-    if (!currentUser || !isAdmin) {
-      return NextResponse.redirect(new URL('/auth/login', request.url))
-    }
+  // Check for token on protected routes
+  if (!token) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
 
-  // Protect dashboard routes
-  if (path.startsWith('/dashboard')) {
-    if (!currentUser) {
-      return NextResponse.redirect(new URL('/auth/login', request.url))
-    }
+  try {
+    // Verify token
+    const secret = new TextEncoder().encode(JWT_SECRET)
+    await jwtVerify(token, secret)
+    return NextResponse.next()
+  } catch (error) {
+    // Invalid token, redirect to login
+    return NextResponse.redirect(new URL('/auth/login', request.url))
   }
-
-  return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/auth/:path*']
+  matcher: [
+    '/dashboard/:path*',
+    '/profile/:path*',
+    '/settings/:path*',
+    '/api/protected/:path*',
+  ]
 }

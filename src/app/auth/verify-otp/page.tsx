@@ -4,13 +4,33 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
 
 export default function VerifyOTPPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const purpose = searchParams.get('purpose') || 'ACCOUNT_OPENING'
+  
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [timer, setTimer] = useState(60)
   const [canResend, setCanResend] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('')
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  useEffect(() => {
+    // Get email from session storage
+    if (purpose === '2FA') {
+      const storedEmail = sessionStorage.getItem('2fa_email')
+      if (storedEmail) setEmail(storedEmail)
+    } else {
+      // For account opening, get from signup flow
+      const userEmail = sessionStorage.getItem('signup_email')
+      if (userEmail) setEmail(userEmail)
+    }
+  }, [purpose])
 
   useEffect(() => {
     if (timer > 0) {
@@ -29,10 +49,16 @@ export default function VerifyOTPPage() {
     const newOtp = [...otp]
     newOtp[index] = value
     setOtp(newOtp)
+    setError('')
 
     // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus()
+    }
+
+    // Auto-submit when all digits are filled
+    if (index === 5 && value && newOtp.every(digit => digit !== '')) {
+      handleSubmit(newOtp.join(''))
     }
   }
 
@@ -42,10 +68,111 @@ export default function VerifyOTPPage() {
     }
   }
 
-  const handleResend = () => {
+  const handleSubmit = async (otpCode: string) => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          otp: otpCode,
+          purpose,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Invalid verification code')
+      }
+
+      // Clear session storage based on purpose
+      if (purpose === '2FA') {
+        sessionStorage.removeItem('2fa_user_id')
+        sessionStorage.removeItem('2fa_email')
+        
+        // For 2FA, we need to complete login
+        const loginResponse = await fetch('/api/auth/complete-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: sessionStorage.getItem('2fa_user_id'),
+          }),
+        })
+
+        if (loginResponse.ok) {
+          router.push('/dashboard')
+        }
+      } else {
+        // For account opening
+        sessionStorage.removeItem('signup_email')
+        router.push('/auth/login?verified=true')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Verification failed')
+      // Clear OTP fields on error
+      setOtp(['', '', '', '', '', ''])
+      inputRefs.current[0]?.focus()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResend = async () => {
     setTimer(60)
     setCanResend(false)
-    // Resend OTP logic here
+    setError('')
+
+    try {
+      const response = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, purpose }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to resend code')
+      }
+
+      // Show success message (optional)
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend code')
+      setTimer(0)
+      setCanResend(true)
+    }
+  }
+
+  const getPurposeTitle = () => {
+    switch(purpose) {
+      case '2FA':
+        return 'Two-Factor Authentication'
+      case 'PASSWORD_RESET':
+        return 'Reset Password'
+      case 'ACCOUNT_OPENING':
+      default:
+        return 'Verify Your Email'
+    }
+  }
+
+  const getPurposeDescription = () => {
+    switch(purpose) {
+      case '2FA':
+        return 'Enter the 6-digit code from your authenticator app'
+      case 'PASSWORD_RESET':
+        return 'Enter the verification code sent to your email'
+      case 'ACCOUNT_OPENING':
+      default:
+        return 'Enter the 6-digit code sent to your email'
+    }
   }
 
   return (
@@ -80,12 +207,11 @@ export default function VerifyOTPPage() {
                 </div>
                 
                 <h1 className="text-5xl font-black text-deep-teal mb-6 leading-tight">
-                  Verify Your<br />
-                  <span className="text-soft-gold">Identity</span>
+                  {getPurposeTitle()}
                 </h1>
                 
                 <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                  We've sent a 6-digit verification code to your email. Enter the code below to verify your identity and continue.
+                  {getPurposeDescription()}
                 </p>
 
                 {/* Security Features */}
@@ -125,11 +251,17 @@ export default function VerifyOTPPage() {
                 <div className="text-center mb-8">
                   <h2 className="text-3xl font-bold text-deep-teal mb-2">Verification Code</h2>
                   <p className="text-gray-600">
-                    Enter the 6-digit code sent to your email
+                    {email ? `Code sent to ${email}` : 'Enter the 6-digit code'}
                   </p>
                 </div>
 
-                <form className="space-y-8">
+                {error && (
+                  <div className="mb-6 p-4 bg-red-50 text-red-800 border border-red-200 rounded-lg">
+                    {error}
+                  </div>
+                )}
+
+                <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
                   {/* OTP Input Grid */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
@@ -146,6 +278,7 @@ export default function VerifyOTPPage() {
                           onChange={(e) => handleChange(index, e.target.value)}
                           onKeyDown={(e) => handleKeyDown(index, e)}
                           className="w-14 h-14 text-center text-2xl font-semibold border border-gray-200 rounded-xl focus:ring-2 focus:ring-soft-gold focus:border-transparent transition-all bg-white/50"
+                          disabled={loading}
                         />
                       ))}
                     </div>
@@ -161,7 +294,8 @@ export default function VerifyOTPPage() {
                       <button
                         type="button"
                         onClick={handleResend}
-                        className="text-sm font-medium text-soft-gold hover:text-deep-teal transition-colors"
+                        disabled={loading}
+                        className="text-sm font-medium text-soft-gold hover:text-deep-teal transition-colors disabled:opacity-50"
                       >
                         Resend Code
                       </button>
@@ -170,17 +304,19 @@ export default function VerifyOTPPage() {
 
                   {/* Verify Button */}
                   <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-deep-teal to-sage text-white py-4 rounded-xl font-semibold hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden group"
+                    type="button"
+                    onClick={() => handleSubmit(otp.join(''))}
+                    disabled={otp.some(digit => !digit) || loading}
+                    className="w-full bg-gradient-to-r from-deep-teal to-sage text-white py-4 rounded-xl font-semibold hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden group disabled:opacity-50"
                   >
                     <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
-                    <span className="relative">Verify & Continue</span>
+                    <span className="relative">{loading ? 'Verifying...' : 'Verify & Continue'}</span>
                   </button>
 
                   {/* Back Links */}
                   <div className="flex items-center justify-between mt-6">
                     <Link 
-                      href="/auth/forgot-password" 
+                      href={purpose === '2FA' ? '/auth/login' : '/auth/signup'} 
                       className="text-sm text-gray-600 hover:text-soft-gold transition-colors inline-flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
