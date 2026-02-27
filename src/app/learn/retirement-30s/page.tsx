@@ -11,7 +11,7 @@ export default function Retirement30sPage() {
         {/* Hero Section */}
         <section className="relative h-[500px] overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+            src="/images/learn/retirement-30s-hero.jpg"
             alt="Retirement planning"
             fill
             className="object-cover"
@@ -43,7 +43,7 @@ export default function Retirement30sPage() {
 
               <div className="my-12">
                 <Image
-                  src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                  src="/images/learn/retirement-planning-couple.jpg"
                   alt="Couple planning retirement"
                   width={1200}
                   height={600}

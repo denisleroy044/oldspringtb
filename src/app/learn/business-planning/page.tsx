@@ -11,7 +11,7 @@ export default function BusinessPlanningPage() {
         {/* Hero Section */}
         <section className="relative h-[500px] overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1553729459-efe14ef6055d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+            src="/images/learn/business-planning-hero.jpg"
             alt="Business planning"
             fill
             className="object-cover"
@@ -43,7 +43,7 @@ export default function BusinessPlanningPage() {
 
               <div className="my-12">
                 <Image
-                  src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                  src="/images/learn/vacation-planning.jpg"
                   alt="Entrepreneurs planning"
                   width={1200}
                   height={600}

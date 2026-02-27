@@ -11,7 +11,7 @@ export default function EstatePlanningPage() {
         {/* Hero Section */}
         <section className="relative h-[500px] overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+            src="/images/learn/estate-planning-hero.jpg"
             alt="Estate planning"
             fill
             className="object-cover"
@@ -43,7 +43,7 @@ export default function EstatePlanningPage() {
 
               <div className="my-12">
                 <Image
-                  src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                  src="/images/learn/family-planning.jpg"
                   alt="Family discussing future plans"
                   width={1200}
                   height={600}

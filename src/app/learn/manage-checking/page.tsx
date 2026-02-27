@@ -11,7 +11,7 @@ export default function ManageCheckingPage() {
         {/* Hero Section */}
         <section className="relative h-[500px] overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+            src="/images/learn/manage-checking-hero.jpg"
             alt="Person managing checking account"
             fill
             className="object-cover"
@@ -44,7 +44,7 @@ export default function ManageCheckingPage() {
 
               <div className="my-12">
                 <Image
-                  src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                  src="/images/learn/mobile-banking-app.jpg"
                   alt="Mobile banking app"
                   width={1200}
                   height={600}

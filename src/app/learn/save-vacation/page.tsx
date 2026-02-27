@@ -11,7 +11,7 @@ export default function SaveVacationPage() {
         {/* Hero Section */}
         <section className="relative h-[500px] overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+            src="/images/learn/summer-vacation-hero.jpg"
             alt="Summer vacation destination"
             fill
             className="object-cover"
@@ -43,7 +43,7 @@ export default function SaveVacationPage() {
 
               <div className="my-12">
                 <Image
-                  src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                  src="/images/learn/vacation-planning.jpg"
                   alt="Family planning vacation"
                   width={1200}
                   height={600}

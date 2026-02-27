@@ -11,7 +11,7 @@ export default function CreditScoresPage() {
         {/* Hero Section */}
         <section className="relative h-[500px] overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+            src="/images/learn/credit-scores-hero.jpg"
             alt="Credit score understanding"
             fill
             className="object-cover"
@@ -43,7 +43,7 @@ export default function CreditScoresPage() {
 
               <div className="my-12">
                 <Image
-                  src="https://images.unsplash.com/photo-1556740758-90de374c12ad?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                  src="/images/learn/credit-score-phone.jpg"
                   alt="Person checking credit score on phone"
                   width={1200}
                   height={600}

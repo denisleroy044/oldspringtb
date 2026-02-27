@@ -11,7 +11,7 @@ export default function BusinessTaxPage() {
         {/* Hero Section */}
         <section className="relative h-[500px] overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1554224154-26032ffc0d07?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+            src="/images/learn/business-tax-hero.jpg"
             alt="Business tax deductions"
             fill
             className="object-cover"
@@ -43,7 +43,7 @@ export default function BusinessTaxPage() {
 
               <div className="my-12">
                 <Image
-                  src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                  src="/images/learn/business-owners-discussing.jpg"
                   alt="Small business owner reviewing finances"
                   width={1200}
                   height={600}

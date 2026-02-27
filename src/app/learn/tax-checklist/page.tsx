@@ -11,7 +11,7 @@ export default function TaxChecklistPage() {
         {/* Hero Section */}
         <section className="relative h-[500px] overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+            src="/images/learn/tax-checklist-hero.jpg"
             alt="Tax documents and calculator"
             fill
             className="object-cover"
@@ -60,7 +60,7 @@ export default function TaxChecklistPage() {
 
               <div className="my-12">
                 <Image
-                  src="https://images.unsplash.com/photo-1554224154-26032ffc0d07?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                  src="/images/learn/tax-checklist-organizing.jpg"
                   alt="Organizing tax documents"
                   width={1200}
                   height={600}

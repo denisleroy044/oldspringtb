@@ -11,7 +11,7 @@ export default function InflationBusinessPage() {
         {/* Hero Section */}
         <section className="relative h-[500px] overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1565514020179-026b92b5e2a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+            src="/images/learn/inflation-business-hero.jpg"
             alt="Business and rising rates"
             fill
             className="object-cover"
@@ -48,7 +48,7 @@ export default function InflationBusinessPage() {
 
               <div className="my-12">
                 <Image
-                  src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                  src="/images/learn/business-owners-discussing.jpg"
                   alt="Business owners discussing strategy"
                   width={1200}
                   height={600}

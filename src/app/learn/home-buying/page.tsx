@@ -11,7 +11,7 @@ export default function HomeBuyingPage() {
         {/* Hero Section */}
         <section className="relative h-[500px] overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+            src="/images/learn/home-buying-hero.jpg"
             alt="First time home buyer"
             fill
             className="object-cover"
@@ -43,7 +43,7 @@ export default function HomeBuyingPage() {
 
               <div className="my-12">
                 <Image
-                  src="https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                  src="/images/learn/new-home-keys.jpg"
                   alt="Happy couple with their new home keys"
                   width={1200}
                   height={600}
