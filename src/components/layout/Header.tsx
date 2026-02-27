@@ -109,12 +109,12 @@ export function Header() {
     { name: 'PAYMENTS', href: '/payments', hasDropdown: true, dropdownId: 'payments' },
   ]
 
-  // Dropdown content with all links connected to existing pages
+  // Dropdown content with only actual child pages
   const dropdownContent = {
     bank: {
       title: 'Banking',
       description: 'Personal and business banking solutions',
-      gradient: 'from-blue-600 to-blue-400',
+      gradient: 'from-[#006F87] to-[#7E9C76]', // Deep teal to sage green
       sections: [
         {
           title: 'Personal Banking',
@@ -128,8 +128,6 @@ export function Header() {
           title: 'Digital Banking',
           links: [
             { name: 'Online Banking', href: '/bank/online-banking', description: 'Bank from anywhere, anytime' },
-            { name: 'Mobile Banking', href: '/bank/mobile', description: 'Powerful banking in your pocket' },
-            { name: 'Bill Pay', href: '/payments/bill-pay', description: 'Easy bill management' },
           ]
         }
       ]
@@ -137,7 +135,7 @@ export function Header() {
     save: {
       title: 'Save',
       description: 'Savings accounts for every goal',
-      gradient: 'from-green-600 to-green-400',
+      gradient: 'from-[#006F87] to-[#7E9C76]', // Deep teal to sage green
       sections: [
         {
           title: 'Savings Accounts',
@@ -160,14 +158,13 @@ export function Header() {
     borrow: {
       title: 'Borrow',
       description: 'Loans and credit options',
-      gradient: 'from-purple-600 to-purple-400',
+      gradient: 'from-[#006F87] to-[#7E9C76]', // Deep teal to sage green
       sections: [
         {
           title: 'Personal Loans',
           links: [
             { name: 'Personal Loans', href: '/borrow/personal', description: 'Rates as low as 11.99% APR' },
             { name: 'Credit Cards', href: '/borrow/credit-cards', description: 'Rewards and low rates' },
-            { name: 'Debt Consolidation', href: '/borrow/consolidation', description: 'Simplify your payments' },
           ]
         },
         {
@@ -175,7 +172,6 @@ export function Header() {
           links: [
             { name: 'Auto Loans', href: '/borrow/auto', description: 'New & used - 5.89% APR' },
             { name: 'Mortgages', href: '/borrow/mortgage', description: 'Purchase or refinance' },
-            { name: 'Home Equity', href: '/borrow/home-equity', description: 'Access your home value' },
           ]
         }
       ]
@@ -183,13 +179,12 @@ export function Header() {
     invest: {
       title: 'Invest',
       description: 'Wealth management and retirement planning',
-      gradient: 'from-amber-600 to-amber-400',
+      gradient: 'from-[#006F87] to-[#7E9C76]', // Deep teal to sage green
       sections: [
         {
           title: 'Investment Services',
           links: [
             { name: 'Our Investment Team', href: '/invest/team', description: 'Meet our experienced financial advisors' },
-            { name: 'Investment Accounts', href: '/invest/accounts', description: 'Stocks, bonds & more' },
             { name: 'Financial Advisors', href: '/invest/advisors', description: 'Expert guidance' },
           ]
         },
@@ -206,7 +201,7 @@ export function Header() {
     insurance: {
       title: 'Insurance',
       description: 'Protect what matters most',
-      gradient: 'from-red-600 to-red-400',
+      gradient: 'from-[#006F87] to-[#7E9C76]', // Deep teal to sage green
       sections: [
         {
           title: 'Personal Insurance',
@@ -229,7 +224,7 @@ export function Header() {
     learn: {
       title: 'Learn',
       description: 'Financial education and tools',
-      gradient: 'from-teal-600 to-teal-400',
+      gradient: 'from-[#006F87] to-[#7E9C76]', // Deep teal to sage green
       sections: [
         {
           title: 'Starting Out',
@@ -252,7 +247,7 @@ export function Header() {
     payments: {
       title: 'Payments',
       description: 'Send and receive money',
-      gradient: 'from-indigo-600 to-indigo-400',
+      gradient: 'from-[#006F87] to-[#7E9C76]', // Deep teal to sage green
       sections: [
         {
           title: 'Make a Payment',
@@ -266,8 +261,6 @@ export function Header() {
           title: 'Other Options',
           links: [
             { name: 'Pay at Branch', href: '/payments/branch', description: 'Visit us at any branch location' },
-            { name: 'Wire Transfers', href: '/payments/wire', description: 'Domestic & international transfers' },
-            { name: 'Scheduled Payments', href: '/payments/scheduled', description: 'Set up recurring payments' },
           ]
         }
       ]
@@ -285,8 +278,11 @@ export function Header() {
     <>
       <header className="bg-soft-white shadow-sm sticky top-0 z-50">
         {/* Branch Hours Strip - Deep Teal */}
-        <div className="bg-deep-teal text-white py-2 text-sm relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_3s_infinite]"></div>
+        <div className="bg-[#006F87] text-white py-2 text-sm relative overflow-hidden">
+          {/* Burnt orange micro accent glow - used very sparingly */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#C65A1E]/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#C65A1E]/10 rounded-full blur-3xl -ml-12 -mb-12"></div>
+          
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between relative z-10">
             <div className="flex items-center space-x-4">
               <span className="font-semibold">Routing # 655205039</span>
@@ -340,18 +336,18 @@ export function Header() {
                         href={item.href}
                         className={`relative px-3 py-2 text-sm font-semibold tracking-wide transition-all duration-300 inline-block ${
                           active 
-                            ? 'text-soft-gold' 
-                            : 'text-gray-800 hover:text-soft-gold'
+                            ? 'text-[#D9B648]' // Soft gold for active
+                            : 'text-gray-800 hover:text-[#D9B648]'
                         }`}
                       >
                         <span className="relative z-10">{item.name}</span>
-                        {/* Beautiful underline effect on hover */}
-                        <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-soft-gold transform origin-left transition-transform duration-300 ${
+                        {/* Soft gold underline effect on hover - using metallic highlight sparingly */}
+                        <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-[#D9B648] transform origin-left transition-transform duration-300 ${
                           hoveredItem === item.name ? 'scale-x-100' : 'scale-x-0'
                         }`}></span>
-                        {/* Active page indicator */}
+                        {/* Active page indicator - soft gold metallic trim */}
                         {active && !item.hasDropdown && (
-                          <span className="absolute bottom-0 left-0 w-full h-0.5 bg-soft-gold"></span>
+                          <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#D9B648]"></span>
                         )}
                       </Link>
                     </div>
@@ -363,18 +359,24 @@ export function Header() {
               <div className="hidden lg:flex items-center">
                 <Link
                   href="/auth/login"
-                  className="relative px-6 py-2.5 text-sm font-semibold text-white bg-deep-teal overflow-hidden group transition-all duration-300 inline-block min-w-[100px] text-center"
+                  className="relative px-6 py-2.5 text-sm font-semibold text-white bg-[#006F87] overflow-hidden group transition-all duration-300 inline-block min-w-[100px] text-center"
                 >
-                  <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  {/* Soft gold shimmer effect */}
+                  <span className="absolute inset-0 bg-gradient-to-r from-[#D9B648]/20 via-white/30 to-[#D9B648]/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  {/* Burnt orange micro accent - used very sparingly */}
+                  <span className="absolute -top-2 -right-2 w-8 h-8 bg-[#C65A1E]/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
                     LOGIN
                   </span>
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="relative px-6 py-2.5 text-sm font-semibold text-white bg-sage overflow-hidden group transition-all duration-200 inline-block min-w-[120px] text-center"
+                  className="relative px-6 py-2.5 text-sm font-semibold text-white bg-[#7E9C76] overflow-hidden group transition-all duration-200 inline-block min-w-[120px] text-center"
                 >
-                  <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  {/* Soft gold shimmer effect */}
+                  <span className="absolute inset-0 bg-gradient-to-r from-[#D9B648]/20 via-white/30 to-[#D9B648]/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  {/* Burnt orange micro accent - used very sparingly */}
+                  <span className="absolute -bottom-2 -left-2 w-8 h-8 bg-[#C65A1E]/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
                     OPEN ACCOUNT
                   </span>
@@ -384,7 +386,7 @@ export function Header() {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 text-gray-600 hover:text-soft-gold transition-all duration-300 hover:scale-110"
+                className="lg:hidden p-2 text-gray-600 hover:text-[#D9B648] transition-all duration-300 hover:scale-110"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {mobileMenuOpen ? (
@@ -398,7 +400,7 @@ export function Header() {
           </nav>
         </div>
 
-        {/* Sophisticated Gradient Dropdown */}
+        {/* Brand-Aligned Gradient Dropdown */}
         {activeDropdown && (
           <div
             ref={dropdownRef}
@@ -406,11 +408,16 @@ export function Header() {
             onMouseLeave={handleDropdownMouseLeave}
             className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-[800px] bg-white rounded-2xl shadow-2xl overflow-hidden z-50 animate-[fadeInDropdown_0.2s_ease-out]"
           >
-            {/* Gradient Header with Sophisticated Design */}
+            {/* Gradient Header - Deep teal to sage green (primary body colors) */}
             <div className={`bg-gradient-to-r ${dropdownContent[activeDropdown as keyof typeof dropdownContent].gradient} px-8 py-6 relative overflow-hidden`}>
-              {/* Decorative elements */}
-              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16"></div>
+              {/* Burnt orange micro accent glow - used VERY sparingly */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-[#C65A1E]/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#C65A1E]/10 rounded-full blur-3xl -ml-16 -mb-16"></div>
+              
+              {/* Soft gold metallic trim - small emblem detail */}
+              <div className="absolute top-4 right-4 w-12 h-12 border border-[#D9B648]/20 rounded-full"></div>
+              <div className="absolute bottom-4 left-4 w-8 h-8 border border-[#D9B648]/20 rounded-full"></div>
+              
               <div className="relative">
                 <h3 className="text-2xl font-bold text-white mb-1">
                   {dropdownContent[activeDropdown as keyof typeof dropdownContent].title}
@@ -421,8 +428,8 @@ export function Header() {
               </div>
             </div>
 
-            {/* Two-column Content Grid with Subtle Gradient Background */}
-            <div className="p-8 bg-gradient-to-br from-gray-50 to-white">
+            {/* Two-column Content Grid */}
+            <div className="p-8">
               <div className="grid grid-cols-2 gap-x-12 gap-y-8">
                 {dropdownContent[activeDropdown as keyof typeof dropdownContent].sections.map((section, idx) => (
                   <div key={idx}>
@@ -440,7 +447,7 @@ export function Header() {
                             setHoveredItem(null)
                           }}
                         >
-                          <p className="text-sm font-semibold text-gray-900 group-hover:text-soft-gold transition-colors">
+                          <p className="text-sm font-semibold text-gray-900 group-hover:text-[#D9B648] transition-colors">
                             {link.name}
                           </p>
                           <p className="text-xs text-gray-500 mt-0.5 group-hover:text-gray-600">
@@ -454,11 +461,14 @@ export function Header() {
               </div>
             </div>
 
-            {/* Footer with Gradient */}
-            <div className="bg-gradient-to-r from-gray-100 to-gray-50 px-8 py-4 border-t border-gray-200">
+            {/* Footer with Soft Gold Metallic Trim */}
+            <div className="bg-gray-50 px-8 py-4 border-t border-gray-200 relative overflow-hidden">
+              {/* Burnt orange micro accent */}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#C65A1E]/5 rounded-full blur-2xl -mr-12 -mt-12"></div>
+              
               <Link
                 href={`/${activeDropdown}`}
-                className="text-sm text-deep-teal hover:text-soft-gold font-medium inline-flex items-center group"
+                className="text-sm text-[#006F87] hover:text-[#D9B648] font-medium inline-flex items-center group relative"
                 onClick={() => {
                   setActiveDropdown(null)
                   setHoveredItem(null)
@@ -489,7 +499,7 @@ export function Header() {
                     <Link
                       href={item.href}
                       className={`block py-2 font-semibold transition-all duration-300 hover:translate-x-2 ${
-                        active ? 'text-soft-gold' : 'text-gray-800 hover:text-soft-gold'
+                        active ? 'text-[#D9B648]' : 'text-gray-800 hover:text-[#D9B648]'
                       }`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -501,18 +511,18 @@ export function Header() {
               <div className="pt-4 space-y-3">
                 <Link
                   href="/auth/login"
-                  className="relative block w-full py-3 text-center font-semibold text-white bg-deep-teal overflow-hidden group rounded-md hover:bg-deep-teal/90 transition-all duration-200"
+                  className="relative block w-full py-3 text-center font-semibold text-white bg-[#006F87] overflow-hidden group rounded-md hover:bg-[#006F87]/90 transition-all duration-200"
                 >
-                  <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-[#D9B648]/20 via-white/30 to-[#D9B648]/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
                     LOGIN
                   </span>
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="relative block w-full py-3 text-center font-semibold text-white bg-sage overflow-hidden group rounded-md hover:bg-sage/90 transition-all duration-200"
+                  className="relative block w-full py-3 text-center font-semibold text-white bg-[#7E9C76] overflow-hidden group rounded-md hover:bg-[#7E9C76]/90 transition-all duration-200"
                 >
-                  <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-[#D9B648]/20 via-white/30 to-[#D9B648]/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
                     OPEN ACCOUNT
                   </span>
@@ -527,18 +537,18 @@ export function Header() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex w-full">
         <Link
           href="/auth/login"
-          className="relative flex-1 py-5 text-center font-bold text-white bg-deep-teal overflow-hidden group transition-all duration-200 text-base tracking-wider"
+          className="relative flex-1 py-5 text-center font-bold text-white bg-[#006F87] overflow-hidden group transition-all duration-200 text-base tracking-wider"
         >
-          <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+          <span className="absolute inset-0 bg-gradient-to-r from-[#D9B648]/20 via-white/30 to-[#D9B648]/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
           <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
             LOGIN
           </span>
         </Link>
         <Link
           href="/auth/signup"
-          className="relative flex-1 py-5 text-center font-bold text-white bg-sage overflow-hidden group transition-all duration-200 text-base tracking-wider"
+          className="relative flex-1 py-5 text-center font-bold text-white bg-[#7E9C76] overflow-hidden group transition-all duration-200 text-base tracking-wider"
         >
-          <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+          <span className="absolute inset-0 bg-gradient-to-r from-[#D9B648]/20 via-white/30 to-[#D9B648]/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
           <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
             OPEN ACCOUNT
           </span>
