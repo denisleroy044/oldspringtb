@@ -309,8 +309,8 @@ export function Header() {
                 </div>
               </Link>
 
-              {/* Desktop Navigation */}
-              <div className="hidden lg:flex items-center space-x-1">
+              {/* Desktop Navigation - Organized Links */}
+              <div className="hidden lg:flex items-center space-x-2">
                 {navItems.map((item) => {
                   const active = isActiveLink(item.href)
                   
@@ -331,32 +331,32 @@ export function Header() {
                     >
                       <Link
                         href={item.href}
-                        className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-md inline-flex items-center ${
+                        className={`relative px-3 py-2 text-sm font-semibold tracking-wide transition-all duration-300 inline-block ${
                           active 
                             ? 'text-soft-gold' 
-                            : 'text-gray-700 hover:text-soft-gold'
+                            : 'text-gray-800 hover:text-soft-gold'
                         }`}
                       >
-                        <span className={`absolute inset-0 bg-soft-gold/10 transform transition-transform duration-300 rounded-md ${
-                          hoveredItem === item.name ? 'scale-100' : 'scale-0'
+                        <span className="relative z-10">{item.name}</span>
+                        {/* Beautiful underline effect on hover */}
+                        <span className={`absolute bottom-0 left-0 w-full h-0.5 bg-soft-gold transform origin-left transition-transform duration-300 ${
+                          hoveredItem === item.name ? 'scale-x-100' : 'scale-x-0'
                         }`}></span>
-                        
-                        <span className={`relative inline-block transition-transform duration-300 ${
-                          hoveredItem === item.name ? 'scale-105' : ''
-                        }`}>
-                          {item.name}
-                        </span>
+                        {/* Active page indicator */}
+                        {active && !item.hasDropdown && (
+                          <span className="absolute bottom-0 left-0 w-full h-0.5 bg-soft-gold"></span>
+                        )}
                       </Link>
                     </div>
                   )
                 })}
               </div>
 
-              {/* Desktop Actions */}
-              <div className="hidden lg:flex items-center space-x-0">
+              {/* Desktop Actions - Perfectly Sized Buttons */}
+              <div className="hidden lg:flex items-center space-x-3">
                 <Link
                   href="/auth/login"
-                  className="relative px-6 py-3 text-sm font-semibold text-white bg-deep-teal overflow-hidden group transition-all duration-300 inline-block"
+                  className="relative px-6 py-2.5 text-sm font-semibold text-white bg-deep-teal overflow-hidden group transition-all duration-300 rounded-md inline-block min-w-[100px] text-center"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
@@ -365,7 +365,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="relative px-6 py-3 text-sm font-semibold text-white bg-sage overflow-hidden group transition-all duration-200 inline-block"
+                  className="relative px-6 py-2.5 text-sm font-semibold text-white bg-sage overflow-hidden group transition-all duration-200 rounded-md inline-block min-w-[120px] text-center"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
@@ -397,7 +397,7 @@ export function Header() {
             ref={dropdownRef}
             onMouseEnter={handleDropdownMouseEnter}
             onMouseLeave={handleDropdownMouseLeave}
-            className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-[700px] bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-[fadeInDropdown_0.2s_ease-out]"
+            className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-[750px] bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-[fadeInDropdown_0.2s_ease-out]"
           >
             {/* Simple header with just text */}
             <div className="px-8 pt-6 pb-2">
@@ -409,9 +409,9 @@ export function Header() {
               </p>
             </div>
 
-            {/* Clean two-column grid */}
+            {/* Clean two-column grid with organized spacing */}
             <div className="px-8 py-4">
-              <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+              <div className="grid grid-cols-2 gap-x-10 gap-y-6">
                 {dropdownContent[activeDropdown as keyof typeof dropdownContent].sections.map((section, idx) => (
                   <div key={idx}>
                     <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
@@ -428,7 +428,7 @@ export function Header() {
                             setHoveredItem(null)
                           }}
                         >
-                          <p className="text-sm font-medium text-gray-900 group-hover:text-soft-gold transition-colors">
+                          <p className="text-sm font-semibold text-gray-900 group-hover:text-soft-gold transition-colors">
                             {link.name}
                           </p>
                           <p className="text-xs text-gray-500 mt-0.5 group-hover:text-gray-600">
@@ -476,8 +476,8 @@ export function Header() {
                   >
                     <Link
                       href={item.href}
-                      className={`block py-2 font-medium transition-all duration-300 hover:translate-x-2 ${
-                        active ? 'text-soft-gold' : 'text-gray-700 hover:text-soft-gold'
+                      className={`block py-2 font-semibold transition-all duration-300 hover:translate-x-2 ${
+                        active ? 'text-soft-gold' : 'text-gray-800 hover:text-soft-gold'
                       }`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
