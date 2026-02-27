@@ -1,3 +1,5 @@
+'use client'
+
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon'
@@ -141,17 +143,19 @@ export default function BankPage() {
           </div>
         </section>
 
-        {/* Add animation styles */}
-        <style jsx global>{`
-          @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-            100% { transform: translateY(0px); }
-          }
-          .animate-float {
-            animation: float 6s ease-in-out infinite;
-          }
-        `}</style>
+        {/* Add animation styles - using regular CSS class instead of styled-jsx */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes float {
+              0% { transform: translateY(0px); }
+              50% { transform: translateY(-20px); }
+              100% { transform: translateY(0px); }
+            }
+            .animate-float {
+              animation: float 6s ease-in-out infinite;
+            }
+          `
+        }} />
       </main>
       <Footer />
     </>
