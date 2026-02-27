@@ -103,9 +103,9 @@ export function Header() {
     { name: 'BANK', href: '/bank', hasDropdown: true, dropdownId: 'bank' },
     { name: 'SAVE', href: '/save', hasDropdown: true, dropdownId: 'save' },
     { name: 'BORROW', href: '/borrow', hasDropdown: true, dropdownId: 'borrow' },
-    { name: 'WEALTH & RETIRE', href: '/invest', hasDropdown: true, dropdownId: 'invest' },
+    { name: 'INVEST', href: '/invest', hasDropdown: true, dropdownId: 'invest' },
     { name: 'INSURANCE', href: '/insurance', hasDropdown: true, dropdownId: 'insurance' },
-    { name: 'LEARN & PLAN', href: '/learn', hasDropdown: true, dropdownId: 'learn' },
+    { name: 'LEARN', href: '/learn', hasDropdown: true, dropdownId: 'learn' },
     { name: 'PAYMENTS', href: '/payments', hasDropdown: true, dropdownId: 'payments' },
   ]
 
@@ -178,8 +178,8 @@ export function Header() {
       ]
     },
     invest: {
-      title: 'Wealth & Retire',
-      description: 'Plan for your financial future',
+      title: 'Invest',
+      description: 'Wealth management and retirement planning',
       sections: [
         {
           title: 'Investment Services',
@@ -222,7 +222,7 @@ export function Header() {
       ]
     },
     learn: {
-      title: 'Learn & Plan',
+      title: 'Learn',
       description: 'Financial education and tools',
       sections: [
         {
@@ -352,11 +352,11 @@ export function Header() {
                 })}
               </div>
 
-              {/* Desktop Actions - Perfectly Sized Buttons */}
-              <div className="hidden lg:flex items-center space-x-3">
+              {/* Desktop Actions - Buttons Right Next to Each Other */}
+              <div className="hidden lg:flex items-center">
                 <Link
                   href="/auth/login"
-                  className="relative px-6 py-2.5 text-sm font-semibold text-white bg-deep-teal overflow-hidden group transition-all duration-300 rounded-md inline-block min-w-[100px] text-center"
+                  className="relative px-6 py-2.5 text-sm font-semibold text-white bg-deep-teal overflow-hidden group transition-all duration-300 inline-block min-w-[100px] text-center"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
@@ -365,7 +365,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="relative px-6 py-2.5 text-sm font-semibold text-white bg-sage overflow-hidden group transition-all duration-200 rounded-md inline-block min-w-[120px] text-center"
+                  className="relative px-6 py-2.5 text-sm font-semibold text-white bg-sage overflow-hidden group transition-all duration-200 inline-block min-w-[120px] text-center"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
                   <span className="relative inline-block group-hover:scale-105 transition-transform duration-300">
