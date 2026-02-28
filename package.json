@@ -8,13 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "vercel-build": "prisma migrate deploy && prisma generate && next build",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev"
+    "vercel-build": "prisma generate && next build"
   },
   "dependencies": {
     "@prisma/client": "^7.4.1",
-    "@prisma/extension-accelerate": "^2.0.2",
+    "@prisma/extension-accelerate": "^5.0.0",
     "@sendgrid/mail": "^8.1.6",
     "@types/react-webcam": "^1.1.0",
     "africastalking": "^0.7.9",
