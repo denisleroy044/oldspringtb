@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Find valid OTP
+    // Find valid OTP in OTPRequest model
     const validOTP = await prisma.oTPRequest.findFirst({
       where: {
         userId: user.id,

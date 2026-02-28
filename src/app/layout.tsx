@@ -1,18 +1,13 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { AuthProvider } from '@/context/AuthContext'
 import './globals.css'
+import { AuthProvider } from '@/context/AuthContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Oldspring Trust',
   description: 'Building lasting relationships based on trust since 1945',
-  icons: {
-    icon: '/images/logo/favicon.png',
-    shortcut: '/images/logo/favicon.png',
-    apple: '/images/logo/favicon.png',
-  },
 }
 
 export default function RootLayout({

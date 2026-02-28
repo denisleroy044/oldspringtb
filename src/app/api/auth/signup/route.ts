@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     // Create full name
     const fullName = `${firstName} ${lastName}`
 
-    // Create user
+    // Create user with preferences
     const user = await prisma.user.create({
       data: {
         email,
@@ -41,14 +41,17 @@ export async function POST(request: Request) {
         phone,
         role: accountType === 'business' ? 'BUSINESS' : 'USER',
         twoFactorEnabled: false,
+        preferences: {
+          create: {
+            emailEnabled: true,
+            pushEnabled: true,
+            smsEnabled: false,
+            theme: 'light',
+          }
+        }
       },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        phone: true,
-        createdAt: true,
+      include: {
+        preferences: true,
       }
     })
 
@@ -67,19 +70,37 @@ export async function POST(request: Request) {
       }
     })
 
+    // Format user object to match AuthContext interface
+    const userResponse = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      phone: user.phone,
+      avatar: user.avatar,
+      twoFactorEnabled: user.twoFactorEnabled,
+      createdAt: user.createdAt.toISOString(),
+      notificationPreferences: user.preferences ? {
+        emailEnabled: user.preferences.emailEnabled,
+        pushEnabled: user.preferences.pushEnabled,
+        smsEnabled: user.preferences.smsEnabled,
+        theme: user.preferences.theme,
+      } : undefined
+    }
+
     console.log('✅ User created successfully. OTP:', otp)
 
     return NextResponse.json(
       { 
         message: 'User created successfully. Please verify your email.',
-        user,
+        user: userResponse,
         requiresVerification: true
       },
       { status: 201 }
     )
 
   } catch (error) {
-    console.error('❌ Signup error:', error)
+    console.error('Signup error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

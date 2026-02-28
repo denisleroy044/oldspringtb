@@ -1,36 +1,25 @@
 import { PrismaClient } from '@prisma/client'
 
-// PrismaClient is attached to the `global` object in development to prevent
-// exhausting your database connection limit.
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
-// Determine which configuration to use
-const prismaClientSingleton = () => {
-  // Check if we have Accelerate URL (production)
+// Check if we have the Accelerate URL (production)
+const getPrismaClient = () => {
   if (process.env.DATABASE_URL__ACCELERATE) {
-    console.log('🚀 Using Prisma Accelerate')
+    console.log('🚀 Using Prisma Accelerate in production')
     return new PrismaClient({
       log: ['error'],
+      // @ts-ignore - Accelerate URL is supported in Prisma 7
       accelerateUrl: process.env.DATABASE_URL__ACCELERATE,
     })
   }
-  
-  // For development, we need to use a driver adapter
-  console.log('💻 Using direct database connection with driver adapter')
-  // Note: In Prisma 7, you still need an adapter even for direct connections
-  // For Neon, we need to use the Neon adapter
-  const { neon } = require('@neondatabase/serverless')
-  const { PrismaNeon } = require('@prisma/adapter-neon')
-  
-  const sql = neon(process.env.DATABASE_URL)
-  const adapter = new PrismaNeon(sql)
-  
+
+  // Development or fallback - use standard client
+  console.log('💻 Using standard Prisma client')
   return new PrismaClient({
-    adapter,
-    log: ['query', 'error', 'warn'],
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   })
 }
 
-export const prisma = globalForPrisma.prisma ?? prismaClientSingleton()
+export const prisma = globalForPrisma.prisma ?? getPrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma

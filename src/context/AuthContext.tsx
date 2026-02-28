@@ -2,47 +2,60 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
+interface NotificationPreferences {
+  emailEnabled: boolean
+  pushEnabled: boolean
+  smsEnabled: boolean
+  theme: string
+}
+
 interface User {
   id: string
-  name: string
   email: string
+  name: string | null
   role: string
+  phone: string | null
+  avatar: string | null
+  twoFactorEnabled: boolean
+  notificationPreferences?: NotificationPreferences
+  createdAt: string
 }
 
 interface AuthContextType {
   user: User | null
-  login: (user: User) => void
+  setUser: (user: User | null) => void
+  loading: boolean
   logout: () => void
-  isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // Check for stored user data on mount
     const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user')
     if (storedUser) {
-      setUser(JSON.parse(storedUser))
+      try {
+        setUser(JSON.parse(storedUser))
+      } catch (error) {
+        console.error('Failed to parse stored user:', error)
+      }
     }
-    setIsLoading(false)
+    setLoading(false)
   }, [])
-
-  const login = (userData: User) => {
-    setUser(userData)
-  }
 
   const logout = () => {
     localStorage.removeItem('user')
     sessionStorage.removeItem('user')
     setUser(null)
+    window.location.href = '/auth/login'
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, setUser, loading, logout }}>
       {children}
     </AuthContext.Provider>
   )

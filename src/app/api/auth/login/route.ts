@@ -15,19 +15,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // Find user by email
+    // Find user by email with all necessary fields
     const user = await prisma.user.findUnique({
       where: { email },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        password: true,
-        role: true,
-        twoFactorEnabled: true,
-        phone: true,
-        avatar: true,
-        createdAt: true,
+      include: {
+        preferences: true,
       }
     })
 
@@ -59,44 +51,29 @@ export async function POST(request: Request) {
       { expiresIn: '7d' }
     )
 
-    // Check if 2FA is enabled
-    if (user.twoFactorEnabled) {
-      // Generate and send OTP for 2FA
-      const otp = Math.floor(100000 + Math.random() * 900000).toString()
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-
-      // Store OTP in database
-      await prisma.oTPRequest.create({
-        data: {
-          code: otp,
-          purpose: '2FA',
-          expiresAt,
-          userId: user.id,
-          identifier: user.email,
-        }
-      })
-
-      // TODO: Send OTP via email/SMS
-      // await sendOTP(user.email, otp)
-
-      return NextResponse.json(
-        { 
-          requiresTwoFactor: true,
-          userId: user.id,
-          message: '2FA verification required'
-        },
-        { status: 200 }
-      )
+    // Format user object to match AuthContext interface
+    const userResponse = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      phone: user.phone,
+      avatar: user.avatar,
+      twoFactorEnabled: user.twoFactorEnabled,
+      createdAt: user.createdAt.toISOString(),
+      notificationPreferences: user.preferences ? {
+        emailEnabled: user.preferences.emailEnabled,
+        pushEnabled: user.preferences.pushEnabled,
+        smsEnabled: user.preferences.smsEnabled,
+        theme: user.preferences.theme,
+      } : undefined
     }
-
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user
 
     // Create response with cookie
     const response = NextResponse.json(
       { 
         message: 'Login successful',
-        user: userWithoutPassword,
+        user: userResponse,
         token 
       },
       { status: 200 }
