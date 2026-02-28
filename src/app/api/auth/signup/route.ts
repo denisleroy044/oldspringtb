@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     // Create full name
     const fullName = `${firstName} ${lastName}`
 
-    // Create user with all necessary fields
+    // Create user
     const user = await prisma.user.create({
       data: {
         email,
@@ -41,25 +41,6 @@ export async function POST(request: Request) {
         phone,
         role: accountType === 'business' ? 'BUSINESS' : 'USER',
         twoFactorEnabled: false,
-        
-        // Create default user preferences
-        preferences: {
-          create: {
-            emailEnabled: true,
-            pushEnabled: true,
-            smsEnabled: false,
-            theme: 'light',
-          }
-        },
-
-        // Create initial notification
-        notifications: {
-          create: {
-            title: 'Welcome to Oldspring Trust!',
-            message: 'Thank you for creating an account. We\'re excited to have you on board.',
-            type: 'SUCCESS',
-          }
-        }
       },
       select: {
         id: true,
@@ -68,7 +49,6 @@ export async function POST(request: Request) {
         role: true,
         phone: true,
         createdAt: true,
-        preferences: true,
       }
     })
 
@@ -87,8 +67,7 @@ export async function POST(request: Request) {
       }
     })
 
-    // TODO: Send verification email with OTP
-    // await sendVerificationEmail(email, fullName, otp)
+    console.log('✅ User created successfully. OTP:', otp)
 
     return NextResponse.json(
       { 
@@ -100,7 +79,7 @@ export async function POST(request: Request) {
     )
 
   } catch (error) {
-    console.error('Signup error:', error)
+    console.error('❌ Signup error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

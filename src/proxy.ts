@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
-export async function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value
 
   // Public paths that don't require authentication
@@ -44,7 +44,7 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    // Verify token using jsonwebtoken (already installed)
+    // Verify token using jsonwebtoken
     jwt.verify(token, JWT_SECRET)
     return NextResponse.next()
   } catch (error) {
