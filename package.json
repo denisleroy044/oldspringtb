@@ -3,16 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node server.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "vercel-build": "echo 'DATABASE_URL length: ${#DATABASE_URL}' && prisma generate && next build"
+    "vercel-build": "prisma generate && next build"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.9.0",
-    "@prisma/adapter-neon": "^5.0.0",
+    "@neondatabase/serverless": "^1.0.2",
+    "@prisma/adapter-neon": "^7.4.2",
     "@prisma/client": "^7.4.1",
     "@sendgrid/mail": "^8.1.6",
     "@types/react-webcam": "^1.1.0",
@@ -20,6 +20,7 @@
     "bcryptjs": "^3.0.3",
     "dotenv": "^16.0.0",
     "framer-motion": "^12.34.3",
+    "jsonwebtoken": "^9.0.0",
     "next": "^16.1.6",
     "nodemailer": "^8.0.1",
     "react": "^19.2.4",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.0",
     "@types/node": "^20",
     "@types/nodemailer": "^7.0.11",
     "@types/react": "^18",
