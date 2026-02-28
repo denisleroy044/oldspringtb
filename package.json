@@ -4,15 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "vercel-build": "prisma generate && next build"
+    "vercel-build": "echo 'DATABASE_URL length: ${#DATABASE_URL}' && prisma generate && next build"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.9.5",
-    "@prisma/adapter-neon": "^5.22.0",
+    "@neondatabase/serverless": "^0.9.0",
+    "@prisma/adapter-neon": "^5.0.0",
     "@prisma/client": "^7.4.1",
     "@sendgrid/mail": "^8.1.6",
     "@types/react-webcam": "^1.1.0",
