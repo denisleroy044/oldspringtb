@@ -71,16 +71,11 @@ export default function SignupPage() {
         throw new Error(data.error || 'Failed to create account')
       }
 
-      // Check if email verification is required
-      if (data.requiresVerification) {
-        // Store email in session storage for OTP verification
-        sessionStorage.setItem('signup_email', formData.email)
-        // Redirect to OTP verification page with account opening purpose
-        router.push('/auth/verify-otp?purpose=ACCOUNT_OPENING')
-      } else {
-        // If no verification required, go directly to login
-        router.push('/auth/login?registered=true')
-      }
+      // Store email for verification
+      sessionStorage.setItem('signup_email', formData.email)
+      
+      // Redirect to OTP verification
+      router.push('/auth/verify-otp?purpose=ACCOUNT_OPENING')
     } catch (err: any) {
       setError(err.message || 'Something went wrong')
     } finally {
