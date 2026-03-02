@@ -1,60 +1,36 @@
-'use client'
-export const dynamic = 'force-dynamic'
+import { Header } from '@/components/layout/Header'
+import { Footer } from '@/components/layout/Footer'
+import { getAccounts } from '@/lib/server/accountData'
+import AccountCards from '@/components/dashboard/AccountCards'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { verifyJWT } from '@/lib/auth'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/context/AuthContext'
-import { AccountCards } from '@/components/dashboard/AccountCards'
-import { QuickActions } from '@/components/dashboard/QuickActions'
-import { MarketWatch } from '@/components/dashboard/MarketWatch'
-import { DashboardHeader } from '@/components/dashboard/Header'
-import { Sidebar } from '@/components/dashboard/Sidebar'
-import { DashboardFooter } from '@/components/dashboard/Footer'
-import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
-
-
-export default function DashboardPage() {
-  const router = useRouter()
-  const { user } = useAuth()
-  const [isMobile, setIsMobile] = useState(false)
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
+export default async function DashboardPage() {
+  const cookieStore = cookies()
+  const token = cookieStore.get('auth-token')?.value
+  
+  if (!token) {
+    redirect('/auth/login')
+  }
+  
+  try {
+    const user = await verifyJWT(token)
+    const accounts = await getAccounts(user.userId)
     
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <DashboardHeader />
-        <main className={`flex-1 p-4 md:p-8 ${isMobile ? 'pb-20' : ''}`}>
-          <ScrollAnimation animation="fadeIn">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-deep-teal mb-2">
-                Welcome back, {user?.name?.split(' ')[0] || 'User'}!
-              </h1>
-              <p className="text-gray-600">Here's what's happening with your accounts today.</p>
-            </div>
-
-            {/* Account Cards */}
-            <AccountCards />
-
-            {/* Quick Actions */}
-            <QuickActions />
-
-            {/* Market Watch */}
-            <MarketWatch />
-          </ScrollAnimation>
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen bg-cream">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <h1 className="text-3xl font-bold text-deep-teal mb-8">Dashboard</h1>
+            <AccountCards accounts={accounts} />
+          </div>
         </main>
-        <DashboardFooter />
-      </div>
-    </div>
-  )
+        <Footer />
+      </>
+    )
+  } catch (error) {
+    redirect('/auth/login')
+  }
 }
