@@ -21,7 +21,7 @@ model User {
   phone         String?   // Phone number for SMS
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  
+
   // Relations
   accounts      Account[]
   notifications Notification[]
@@ -65,7 +65,7 @@ model Account {
   status        String    @default("ACTIVE") // ACTIVE, FROZEN, CLOSED, PENDING
   userId        String
   user          User      @relation(fields: [userId], references: [id])
-  
+
   // Relations
   transactions  Transaction[]
   cards         Card[]
@@ -91,14 +91,14 @@ model Transaction {
   reference     String?   // External reference number
   counterparty  String?   // Who the transaction was with
   tags          String[]  // For categorizing
-  
+
   accountId     String
   account       Account   @relation(fields: [accountId], references: [id])
-  
+
   // For transfers between accounts
   fromAccountId String?
   toAccountId   String?
-  
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -116,29 +116,29 @@ model Transfer {
   type          String    // INTERNAL, EXTERNAL, WIRE, ACH
   scheduledDate DateTime?
   completedDate DateTime?
-  
+
   // For internal transfers
   fromAccountId String?
   fromAccount   Account?  @relation("SentTransfersFrom", fields: [fromAccountId], references: [id])
-  
+
   toAccountId   String?
   toAccount     Account?  @relation("SentTransfersTo", fields: [toAccountId], references: [id])
-  
+
   // For external transfers
   fromUserId    String?
   fromUser      User?     @relation("SentTransfers", fields: [fromUserId], references: [id])
-  
+
   toUserId      String?
   toUser        User?     @relation("ReceivedTransfers", fields: [toUserId], references: [id])
-  
+
   externalAccountName String?  // For external transfers
   externalAccountNumber String?
   externalRoutingNumber String?
   externalBankName String?
-  
+
   fee           Float     @default(0)
   reference     String?   // Transaction reference
-  
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -159,21 +159,21 @@ model Card {
   expiryYear    Int
   status        String    @default("ACTIVE") // ACTIVE, INACTIVE, BLOCKED, EXPIRED
   isVirtual     Boolean   @default(false)
-  
+
   // Credit card specific
   creditLimit   Float?
   availableCredit Float?
   currentBalance Float?   @default(0)
   apr           Float?    // Annual Percentage Rate
   rewardsPoints Int?      @default(0)
-  
+
   accountId     String
   account       Account   @relation(fields: [accountId], references: [id])
-  
+
   // Relations
   user          User      @relation(fields: [userId], references: [id])
   userId        String
-  
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -194,16 +194,16 @@ model Bill {
   autoPay       Boolean   @default(false)
   paymentMethod String?   // ACCOUNT, CARD
   notes         String?
-  
+
   userId        String
   user          User      @relation(fields: [userId], references: [id])
-  
+
   accountId     String?
   account       Account?  @relation(fields: [accountId], references: [id])
-  
+
   paidAmount    Float?
   paidDate      DateTime?
-  
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -224,10 +224,10 @@ model Investment {
   totalValue    Float
   gainLoss      Float
   gainLossPercent Float
-  
+
   userId        String
   user          User      @relation(fields: [userId], references: [id])
-  
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -242,10 +242,10 @@ model Watchlist {
   name          String
   type          String
   alertPrice    Float?
-  
+
   userId        String
   user          User      @relation(fields: [userId], references: [id])
-  
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -261,10 +261,10 @@ model Notification {
   type          String    // INFO, SUCCESS, WARNING, ERROR
   isRead        Boolean   @default(false)
   link          String?   // Optional link to click
-  
+
   userId        String
   user          User      @relation(fields: [userId], references: [id])
-  
+
   createdAt     DateTime  @default(now())
   readAt        DateTime?
 
@@ -281,10 +281,10 @@ model OTPRequest {
   expiresAt     DateTime
   attempts      Int       @default(0)
   isVerified    Boolean   @default(false)
-  
+
   userId        String
   user          User      @relation(fields: [userId], references: [id])
-  
+
   identifier    String    // email or phone where OTP was sent
   createdAt     DateTime  @default(now())
   verifiedAt    DateTime?
@@ -303,7 +303,7 @@ model Session {
   expires       DateTime
   userAgent     String?
   ipAddress     String?
-  
+
   createdAt     DateTime  @default(now())
   lastActive    DateTime  @default(now())
 
@@ -321,7 +321,7 @@ model AuditLog {
   ipAddress     String?
   userAgent     String?
   status        String    // SUCCESS, FAILED, ATTEMPT
-  
+
   createdAt     DateTime  @default(now())
 
   @@index([userId])
@@ -338,16 +338,16 @@ model SupportTicket {
   status        String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
   priority      String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
   category      String    // ACCOUNT, CARD, TRANSFER, TECHNICAL, OTHER
-  
+
   userId        String
   user          User      @relation(fields: [userId], references: [id])
-  
+
   assignedTo    String?   // Admin/staff ID
   resolvedAt    DateTime?
-  
+
   attachments   String[]  // URLs to attached files
   responses     TicketResponse[]
-  
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -362,12 +362,12 @@ model TicketResponse {
   message       String
   isStaff       Boolean   @default(false)
   staffName     String?
-  
+
   ticketId      String
   ticket        SupportTicket @relation(fields: [ticketId], references: [id])
-  
+
   attachments   String[]
-  
+
   createdAt     DateTime  @default(now())
 
   @@index([ticketId])
@@ -383,10 +383,10 @@ model Beneficiary {
   email         String?
   phone         String?
   isSaved       Boolean   @default(true)
-  
+
   userId        String
   user          User      @relation(fields: [userId], references: [id])
-  
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -405,20 +405,20 @@ model LoanApplication {
   employmentStatus String
   annualIncome  Float
   creditScore   Int?
-  
+
   userId        String
   user          User      @relation(fields: [userId], references: [id])
-  
+
   approvedAmount Float?
   approvedTerm  Int?
   interestRate  Float?
   monthlyPayment Float?
-  
+
   disbursedAt   DateTime?
   completedAt   DateTime?
-  
+
   documents     String[]  // URLs to uploaded documents
-  
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -444,14 +444,14 @@ model AccountOpeningRequest {
   annualIncome  Float?
   status        String    @default("PENDING") // PENDING, APPROVED, REJECTED, COMPLETED
   notes         String?
-  
+
   userId        String?
   user          User?     @relation(fields: [userId], references: [id])
-  
+
   approvedAt    DateTime?
   rejectedAt    DateTime?
   rejectionReason String?
-  
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -471,10 +471,13 @@ model ProductRate {
   maxAmount     Float?
   isActive      Boolean   @default(true)
   description   String?
-  
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   @@index([productType])
   @@index([isActive])
 }
+
+
+// ... rest of your models (keep them exactly as they are)
