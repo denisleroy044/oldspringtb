@@ -7,6 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // User model - core user information
@@ -478,6 +479,3 @@ model ProductRate {
   @@index([productType])
   @@index([isActive])
 }
-
-
-// ... rest of your models (keep them exactly as they are)
