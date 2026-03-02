@@ -11,6 +11,8 @@
     "vercel-build": "prisma generate && next build"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.0",
+    "@prisma/adapter-neon": "^5.0.0",
     "@prisma/client": "^7.4.1",
     "@sendgrid/mail": "^8.1.6",
     "@types/react-webcam": "^1.1.0",
