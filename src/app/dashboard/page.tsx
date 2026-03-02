@@ -7,7 +7,8 @@ import { redirect } from 'next/navigation'
 import { verifyJWT } from '@/lib/auth'
 
 export default async function DashboardPage() {
-  const cookieStore = cookies()
+  // cookies() returns a Promise in Next.js App Router
+  const cookieStore = await cookies()
   const token = cookieStore.get('auth-token')?.value
   
   if (!token) {
