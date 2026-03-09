@@ -1,42 +1,42 @@
-import { notFound } from 'next/navigation'
+'use client'
 
-// Generate all possible account IDs for static export
-export function generateStaticParams() {
-  // For static export, we need to define all possible account IDs
-  // These should match the accounts in your database/mock data
-  const accountIds = ['1', '2', '3'] // Add all your account IDs here
-  
-  return accountIds.map((id) => ({
-    id: id,
-  }))
-}
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import * as React from 'react'
 
-export default function AccountDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params
-  
-  // Mock account data (in real app, fetch from database)
-  const accounts: Record<string, { name: string; type: string; balance: number }> = {
-    '1': { name: 'Primary Checking', type: 'CHECKING', balance: 5280.42 },
-    '2': { name: 'High-Yield Savings', type: 'SAVINGS', balance: 12750.89 },
-    '3': { name: 'Rewards Credit Card', type: 'CREDIT', balance: -3249.25 },
+export default function AccountDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  // Unwrap params promise using React.use()
+  const { id } = React.use(params)
+  const router = useRouter()
+  const [account, setAccount] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAccountDetails()
+  }, [id]) // Now id is properly resolved
+
+  const fetchAccountDetails = async () => {
+    try {
+      const response = await fetch(`/api/dashboard/accounts/${id}`)
+      const data = await response.json()
+      setAccount(data)
+    } catch (error) {
+      console.error('Error fetching account:', error)
+    } finally {
+      setLoading(false)
+    }
   }
-  
-  const account = accounts[id]
-  
-  if (!account) {
-    notFound()
+
+  if (loading) {
+    return <div className="p-8 text-center">Loading...</div>
   }
-  
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <h1 className="text-4xl font-bold text-deep-teal mb-4">{account.name}</h1>
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <p className="text-gray-600 mb-2">Account Type: {account.type}</p>
-          <p className="text-gray-600 mb-2">Balance: ${account.balance.toLocaleString()}</p>
-          <p className="text-gray-600">Account ID: {id}</p>
-        </div>
-      </div>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-4">Account Details</h1>
+      <pre className="bg-gray-100 p-4 rounded-lg">
+        {JSON.stringify(account, null, 2)}
+      </pre>
     </div>
   )
 }

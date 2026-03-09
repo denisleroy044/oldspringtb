@@ -1,60 +1,44 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import crypto from 'crypto'
+import { NextRequest, NextResponse } from 'next/server'
+import { query } from '@/lib/db'
+import { requestOTP } from '@/lib/otp/otpService'
 
-export async function POST(request: Request) {
+const rateLimitMap = new Map<string, number[]>()
+
+export async function POST(req: NextRequest) {
   try {
-    const { email, purpose } = await request.json()
-
-    if (!email || !purpose) {
-      return NextResponse.json(
-        { error: 'Email and purpose are required' },
-        { status: 400 }
-      )
+    const { userId, purpose, requestId } = await req.json()
+    
+    // Rate limiting
+    const now = Date.now()
+    const attempts = (rateLimitMap.get(userId) || []).filter(t => now - t < 600_000)
+    
+    if (attempts.length >= 3) {
+      return NextResponse.json({ error: 'Too many requests. Please wait before retrying.' }, { status: 429 })
     }
-
-    // Find the user
-    const user = await prisma.user.findUnique({
-      where: { email }
-    })
-
+    
+    rateLimitMap.set(userId, [...attempts, now])
+    
+    // Get user from database
+    const userRes = await query(
+      'SELECT email, "firstName", "lastName" FROM users WHERE id = $1',
+      [userId]
+    )
+    
+    const user = userRes.rows[0]
+    
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found.' }, { status: 404 })
     }
-
-    // Generate new OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString()
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-
-    // Create a new OTP request in the OTPRequest model
-    await prisma.oTPRequest.create({
-      data: {
-        code: otp,
-        purpose: purpose,
-        expiresAt,
-        userId: user.id,
-        identifier: email,
-      }
+    
+    // Generate and send new OTP
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim()
+    const otpResult = await requestOTP(user.email, purpose, fullName || 'User')
+    
+    return NextResponse.json({ 
+      success: true, 
+      requestId: otpResult.requestId 
     })
-
-    // TODO: Send OTP via email
-    // await sendOTPEmail(email, otp, purpose)
-
-    console.log(`📧 New OTP generated for ${email}: ${otp}`)
-
-    return NextResponse.json(
-      { message: 'OTP sent successfully' },
-      { status: 200 }
-    )
-
-  } catch (error) {
-    console.error('Resend OTP error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+  } catch {
+    return NextResponse.json({ error: 'Failed to resend code.' }, { status: 500 })
   }
 }

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -7,17 +8,12 @@ module.exports = {
   ],
   theme: {
     extend: {
-      fontFamily: {
-        'poppins': ['var(--font-poppins)', 'Poppins', 'sans-serif'],
-      },
       colors: {
-        'deep-teal': '#006F87',
-        'sage': '#7E9C76',
-        'soft-gold': '#D9B648',
-        'cream': '#F4EBD2',
-        'soft-white': '#F9F9F9',
-        'text-dark': '#2C3E50',
-        'text-soft': '#5D6D7E',
+        'deep-teal': '#0A5C5E',
+        'sage': '#7C9A6E',
+        'soft-gold': '#E8B86C',
+        'cream': '#F8F4E9',
+        'burnt-orange': '#CC5500',
       },
     },
   },

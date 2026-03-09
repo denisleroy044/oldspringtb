@@ -13,3 +13,6 @@ prisma/generated/
 .env
 .env.local
 .env
+
+.vercel
+.env*.local

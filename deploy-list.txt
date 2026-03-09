@@ -1,0 +1,30 @@
+# Auth Pages
+src/app/auth/login/
+src/app/auth/signup/
+src/app/auth/forgot-password/
+src/app/auth/reset-password/
+src/app/auth/verify-otp/
+src/app/auth/layout.tsx
+
+# Dashboard Pages
+src/app/dashboard/
+src/components/dashboard/
+
+# Admin Pages
+src/app/admin/
+src/components/admin/
+
+# API Routes (only auth and dashboard related)
+src/app/api/auth/
+src/app/api/dashboard/
+src/app/api/admin/
+
+# Context and Utilities
+src/context/AuthContext.tsx
+src/context/ThemeContext.tsx
+src/lib/auth/
+src/lib/db/
+
+# Public images (only if you have new ones)
+public/images/logo/
+public/images/3d/

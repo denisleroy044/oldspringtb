@@ -1,0 +1,743 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import {
+  CreditCard,
+  Search,
+  Filter,
+  DollarSign,
+  Calendar,
+  User,
+  ChevronRight,
+  Loader2,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Clock,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  Download,
+  Eye,
+  Plus,
+  X,
+  AlertCircle
+} from 'lucide-react'
+
+interface Transaction {
+  id: string
+  userId: string
+  userEmail?: string
+  userName?: string
+  type: 'credit' | 'debit'
+  amount: number
+  description: string
+  status: 'completed' | 'pending' | 'failed'
+  createdAt: string
+  accountId?: string
+  accountNumber?: string
+}
+
+interface User {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  accounts: Array<{
+    id: string
+    type: string
+    number: string
+    balance: number
+  }>
+}
+
+export default function AdminTransactionsPage() {
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('all')
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+  const [showDetails, setShowDetails] = useState(false)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  // Form state for new transaction
+  const [formData, setFormData] = useState({
+    userId: '',
+    type: 'credit',
+    amount: '',
+    description: '',
+    accountId: ''
+  })
+
+  useEffect(() => {
+    fetchTransactions()
+    fetchUsers()
+  }, [])
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await fetch('/api/admin/transactions')
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch transactions')
+      }
+      
+      setTransactions(data.transactions || [])
+    } catch (error) {
+      console.error('Error fetching transactions:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load transactions')
+      
+      // Set fallback data for demo
+      setTransactions([
+        {
+          id: 'tx_001',
+          userId: 'user_001',
+          userEmail: 'john.doe@example.com',
+          userName: 'John Doe',
+          type: 'credit',
+          amount: 3250.00,
+          description: 'Salary Deposit',
+          status: 'completed',
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          accountId: 'acc_001',
+          accountNumber: '****1234'
+        },
+        {
+          id: 'tx_002',
+          userId: 'user_001',
+          userEmail: 'john.doe@example.com',
+          userName: 'John Doe',
+          type: 'debit',
+          amount: 15.99,
+          description: 'Netflix Subscription',
+          status: 'completed',
+          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          accountId: 'acc_001',
+          accountNumber: '****1234'
+        },
+        {
+          id: 'tx_003',
+          userId: 'user_002',
+          userEmail: 'jane.smith@example.com',
+          userName: 'Jane Smith',
+          type: 'credit',
+          amount: 500.00,
+          description: 'Transfer from Savings',
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          accountId: 'acc_003',
+          accountNumber: '****9012'
+        }
+      ])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('/api/admin/users')
+      const data = await response.json()
+      setUsers(data.users || [])
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      // Set fallback users for demo
+      setUsers([
+        {
+          id: 'user_001',
+          email: 'john.doe@example.com',
+          firstName: 'John',
+          lastName: 'Doe',
+          accounts: [
+            {
+              id: 'acc_001',
+              type: 'Checking Account',
+              number: '****1234',
+              balance: 15250.50
+            }
+          ]
+        },
+        {
+          id: 'user_002',
+          email: 'jane.smith@example.com',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          accounts: [
+            {
+              id: 'acc_003',
+              type: 'Checking Account',
+              number: '****9012',
+              balance: 5000.00
+            }
+          ]
+        }
+      ])
+    }
+  }
+
+  const handleAddTransaction = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/admin/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: formData.userId,
+          type: formData.type,
+          amount: parseFloat(formData.amount),
+          description: formData.description,
+          accountId: formData.accountId || null
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create transaction')
+      }
+
+      setSuccess('Transaction created successfully!')
+      setShowAddModal(false)
+      setFormData({
+        userId: '',
+        type: 'credit',
+        amount: '',
+        description: '',
+        accountId: ''
+      })
+      fetchTransactions()
+      
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (error) {
+      console.error('Error creating transaction:', error)
+      setError(error instanceof Error ? error.message : 'Failed to create transaction')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount)
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch(status) {
+      case 'completed':
+        return <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs rounded-full flex items-center gap-1">
+          <CheckCircle className="w-3 h-3" />
+          Completed
+        </span>
+      case 'pending':
+        return <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 text-xs rounded-full flex items-center gap-1 animate-pulse">
+          <Clock className="w-3 h-3" />
+          Pending
+        </span>
+      case 'failed':
+        return <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs rounded-full flex items-center gap-1">
+          <XCircle className="w-3 h-3" />
+          Failed
+        </span>
+      default:
+        return <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-full">
+          {status}
+        </span>
+    }
+  }
+
+  const getTypeIcon = (type: string) => {
+    if (type === 'credit') {
+      return <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+        <ArrowDownLeft className="w-4 h-4 text-green-600 dark:text-green-400" />
+      </div>
+    }
+    return <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+      <ArrowUpRight className="w-4 h-4 text-red-600 dark:text-red-400" />
+    </div>
+  }
+
+  // Calculate summary stats
+  const totalVolume = transactions.reduce((sum, t) => sum + t.amount, 0)
+  const completedCount = transactions.filter(t => t.status === 'completed').length
+  const pendingCount = transactions.filter(t => t.status === 'pending').length
+  const failedCount = transactions.filter(t => t.status === 'failed').length
+
+  const filteredTransactions = transactions.filter(t => {
+    // Filter by type/status
+    if (filter === 'credit' && t.type !== 'credit') return false
+    if (filter === 'debit' && t.type !== 'debit') return false
+    if (filter === 'completed' && t.status !== 'completed') return false
+    if (filter === 'pending' && t.status !== 'pending') return false
+    if (filter === 'failed' && t.status !== 'failed') return false
+    
+    // Search
+    if (search) {
+      const searchLower = search.toLowerCase()
+      return (
+        t.description?.toLowerCase().includes(searchLower) ||
+        t.userEmail?.toLowerCase().includes(searchLower) ||
+        t.userName?.toLowerCase().includes(searchLower) ||
+        t.amount.toString().includes(search)
+      )
+    }
+    
+    return true
+  })
+
+  const selectedUser = users.find(u => u.id === formData.userId)
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-outfit font-bold text-gray-900 dark:text-white">
+            Transactions
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Monitor and manage all platform transactions
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={fetchTransactions}
+            className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-gradient-to-r from-deep-teal to-sage text-white rounded-lg hover:shadow-lg transition-all btn-shimmer flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Transaction
+          </button>
+        </div>
+      </div>
+
+      {/* Success Message */}
+      {success && (
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300 rounded-lg flex items-center gap-2">
+          <CheckCircle className="w-5 h-5" />
+          {success}
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 rounded-lg flex items-center gap-2">
+          <AlertCircle className="w-5 h-5" />
+          {error}
+        </div>
+      )}
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Volume</p>
+          <p className="text-2xl font-outfit font-bold text-gray-900 dark:text-white">
+            {formatCurrency(totalVolume)}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {transactions.length} transactions
+          </p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Completed</p>
+          <p className="text-2xl font-outfit font-bold text-green-600 dark:text-green-400">
+            {completedCount}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {((completedCount / transactions.length) * 100 || 0).toFixed(1)}% success rate
+          </p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Pending</p>
+          <p className="text-2xl font-outfit font-bold text-yellow-600 dark:text-yellow-400">
+            {pendingCount}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Awaiting confirmation</p>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Failed</p>
+          <p className="text-2xl font-outfit font-bold text-red-600 dark:text-red-400">
+            {failedCount}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Requires attention</p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by description, user, or amount..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            />
+          </div>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+          >
+            <option value="all">All Transactions</option>
+            <option value="credit">Credits (In)</option>
+            <option value="debit">Debits (Out)</option>
+            <option value="completed">Completed</option>
+            <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Transactions Table */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-deep-teal" />
+        </div>
+      ) : filteredTransactions.length === 0 ? (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+          <CreditCard className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+          <h3 className="text-lg font-outfit font-semibold text-gray-900 dark:text-white mb-2">
+            No Transactions Found
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            {search || filter !== 'all' 
+              ? 'Try adjusting your search or filters'
+              : 'No transactions have been processed yet'}
+          </p>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="mt-4 px-4 py-2 bg-deep-teal text-white rounded-lg hover:bg-sage transition-colors inline-flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add First Transaction
+          </button>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Transaction</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredTransactions.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {getTypeIcon(tx.type)}
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {tx.description || 'Transaction'}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            ID: {tx.id.slice(0, 8)}...
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {tx.userName || 'Unknown'}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {tx.userEmail || 'No email'}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className={`font-outfit font-semibold ${
+                        tx.type === 'credit' 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {tx.type === 'credit' ? '+' : '-'}{formatCurrency(tx.amount)}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      {getStatusBadge(tx.status)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      {formatDate(tx.createdAt)}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => {
+                          setSelectedTransaction(tx)
+                          setShowDetails(true)
+                        }}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        <Eye className="w-4 h-4 text-gray-500" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Add Transaction Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-outfit font-bold text-gray-900 dark:text-white">
+                  Add Transaction
+                </h2>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleAddTransaction} className="p-6 space-y-4">
+              {/* User Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Select User
+                </label>
+                <select
+                  value={formData.userId}
+                  onChange={(e) => setFormData({...formData, userId: e.target.value, accountId: ''})}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="">Choose a user</option>
+                  {users.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.firstName} {user.lastName} ({user.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Account Selection (if user has accounts) */}
+              {selectedUser && selectedUser.accounts && selectedUser.accounts.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Select Account (Optional)
+                  </label>
+                  <select
+                    value={formData.accountId}
+                    onChange={(e) => setFormData({...formData, accountId: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  >
+                    <option value="">No account (manual only)</option>
+                    {selectedUser.accounts.map(account => (
+                      <option key={account.id} value={account.id}>
+                        {account.type} - {account.number} (Balance: {formatCurrency(account.balance)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Transaction Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Transaction Type
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      value="credit"
+                      checked={formData.type === 'credit'}
+                      onChange={(e) => setFormData({...formData, type: e.target.value as 'credit' | 'debit'})}
+                      className="w-4 h-4 text-soft-gold focus:ring-soft-gold"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Credit (Add funds)</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      value="debit"
+                      checked={formData.type === 'debit'}
+                      onChange={(e) => setFormData({...formData, type: e.target.value as 'credit' | 'debit'})}
+                      className="w-4 h-4 text-soft-gold focus:ring-soft-gold"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Debit (Remove funds)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Amount
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                    required
+                    className="w-full pl-8 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  placeholder="e.g., Manual adjustment, bonus, fee, etc."
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-deep-teal to-sage text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 btn-shimmer"
+                >
+                  {submitting ? 'Creating...' : 'Create Transaction'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Transaction Details Modal */}
+      {showDetails && selectedTransaction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-outfit font-bold text-gray-900 dark:text-white">
+                  Transaction Details
+                </h2>
+                <button
+                  onClick={() => setShowDetails(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-center p-4">
+                <div className="text-center">
+                  <div className="inline-block p-4 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
+                    {selectedTransaction.type === 'credit' ? (
+                      <ArrowDownLeft className="w-8 h-8 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <ArrowUpRight className="w-8 h-8 text-red-600 dark:text-red-400" />
+                    )}
+                  </div>
+                  <p className="text-3xl font-outfit font-bold text-gray-900 dark:text-white mb-2">
+                    {selectedTransaction.type === 'credit' ? '+' : '-'}{formatCurrency(selectedTransaction.amount)}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {selectedTransaction.description || 'Transaction'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Transaction ID</span>
+                  <span className="font-mono text-sm text-gray-900 dark:text-white">{selectedTransaction.id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">User</span>
+                  <span className="text-gray-900 dark:text-white">{selectedTransaction.userName || 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Email</span>
+                  <span className="text-gray-900 dark:text-white">{selectedTransaction.userEmail || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Status</span>
+                  <span>{getStatusBadge(selectedTransaction.status)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Date</span>
+                  <span className="text-gray-900 dark:text-white">{formatDate(selectedTransaction.createdAt)}</span>
+                </div>
+                {selectedTransaction.accountNumber && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Account</span>
+                    <span className="font-mono text-gray-900 dark:text-white">{selectedTransaction.accountNumber}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+              <button
+                onClick={() => setShowDetails(false)}
+                className="w-full px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

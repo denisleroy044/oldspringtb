@@ -4,20 +4,16 @@ import { useEffect, useRef, ReactNode } from 'react'
 
 interface ScrollAnimationProps {
   children: ReactNode
-  animation?: 'fadeIn' | 'fadeInUp' | 'fadeInDown' | 'fadeInLeft' | 'fadeInRight' | 'zoomIn' | 'flipIn'
+  animation?: 'fadeIn' | 'fadeInLeft' | 'fadeInRight' | 'fadeInUp' | 'fadeInDown'
   delay?: number
-  duration?: number
-  threshold?: number
   className?: string
 }
 
-export function ScrollAnimation({
-  children,
-  animation = 'fadeInUp',
+export function ScrollAnimation({ 
+  children, 
+  animation = 'fadeIn', 
   delay = 0,
-  duration = 0.6,
-  threshold = 0.2,
-  className = ''
+  className = '' 
 }: ScrollAnimationProps) {
   const elementRef = useRef<HTMLDivElement>(null)
 
@@ -26,17 +22,13 @@ export function ScrollAnimation({
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            // Add animation class when element comes into view
-            entry.target.classList.add(`animate-${animation}`)
-            // Unobserve after animation is triggered
-            observer.unobserve(entry.target)
+            setTimeout(() => {
+              entry.target.classList.add('animate-' + animation)
+            }, delay)
           }
         })
       },
-      {
-        threshold,
-        rootMargin: '50px'
-      }
+      { threshold: 0.1 }
     )
 
     if (elementRef.current) {
@@ -48,18 +40,10 @@ export function ScrollAnimation({
         observer.unobserve(elementRef.current)
       }
     }
-  }, [animation, threshold])
+  }, [animation, delay])
 
   return (
-    <div
-      ref={elementRef}
-      className={`opacity-0 ${className}`}
-      style={{
-        animationDelay: `${delay}s`,
-        animationDuration: `${duration}s`,
-        animationFillMode: 'forwards'
-      }}
-    >
+    <div ref={elementRef} className={`opacity-0 ${className}`}>
       {children}
     </div>
   )

@@ -1,0 +1,280 @@
+import { setupUserBridge } from '@/lib/compat/user-bridge'
+
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import {
+  LayoutDashboard,
+  Users,
+  CreditCard,
+  Landmark,
+  Gift,
+  Receipt,
+  Headphones,
+  MessageCircle,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Bell,
+  Search,
+  ChevronDown,
+  Shield,
+  BarChart3,
+  FileText,
+  Clock,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react'
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const router = useRouter()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [stats, setStats] = useState({
+    pendingLoans: 0,
+    pendingGrants: 0,
+    openTickets: 0,
+    activeChats: 0
+  })
+
+  useEffect(() => {
+    // Setup user bridge for admin transactions
+    setupUserBridge();
+
+    fetchStats()
+    fetchNotifications()
+    
+    // Poll for updates every 30 seconds
+    const interval = setInterval(() => {
+      fetchStats()
+      fetchNotifications()
+    }, 30000)
+    
+    return () => clearInterval(interval)
+  }, [])
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/admin/stats')
+      const data = await response.json()
+      setStats(data)
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    }
+  }
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('/api/admin/notifications')
+      const data = await response.json()
+      setNotifications(data.notifications || [])
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+    }
+  }
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/auth/login')
+  }
+
+  const navItems = [
+    { 
+      name: 'Dashboard', 
+      href: '/admin/dashboard', 
+      icon: LayoutDashboard,
+      badge: null
+    },
+    { 
+      name: 'User Management', 
+      href: '/admin/users', 
+      icon: Users,
+      badge: null
+    },
+    { 
+      name: 'Transactions', 
+      href: '/admin/transactions', 
+      icon: CreditCard,
+      badge: null
+    },
+    { 
+      name: 'Loan Applications', 
+      href: '/admin/loans', 
+      icon: Landmark,
+      badge: stats.pendingLoans > 0 ? stats.pendingLoans : null
+    },
+    { 
+      name: 'Grant Applications', 
+      href: '/admin/grants', 
+      icon: Gift,
+      badge: stats.pendingGrants > 0 ? stats.pendingGrants : null
+    },
+    { 
+      name: 'Bill Payments', 
+      href: '/admin/bills', 
+      icon: Receipt,
+      badge: null
+    },
+    { 
+      name: 'Support Tickets', 
+      href: '/admin/tickets', 
+      icon: Headphones,
+      badge: stats.openTickets > 0 ? stats.openTickets : null
+    },
+    { 
+      name: 'Live Chat', 
+      href: '/admin/live-chat', 
+      icon: MessageCircle,
+      badge: stats.activeChats > 0 ? `${stats.activeChats} active` : null
+    },
+    { 
+      name: 'Settings', 
+      href: '/admin/settings', 
+      icon: Settings,
+      badge: null
+    },
+  ]
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      {/* Admin Header */}
+      <header className="fixed top-0 left-0 right-0 bg-gradient-to-r from-deep-teal to-sage text-white z-30">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="lg:hidden p-2 rounded-md hover:bg-white/10 mr-2"
+              >
+                {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+              <Link href="/admin/dashboard" className="flex items-center gap-2">
+                <Shield className="w-8 h-8" />
+                <span className="font-outfit font-semibold text-xl hidden sm:block">Admin Panel</span>
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-4">
+              {/* Search */}
+              <div className="relative hidden md:block">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="w-64 pl-10 pr-4 py-2 bg-white/10 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30"
+                />
+              </div>
+
+              {/* Notifications */}
+              <div className="relative">
+                <button className="p-2 hover:bg-white/10 rounded-lg relative">
+                  <Bell className="w-5 h-5" />
+                  {notifications.length > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  )}
+                </button>
+              </div>
+
+              {/* Admin Profile */}
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <span className="hidden sm:block text-sm font-medium">Admin</span>
+                <ChevronDown className="w-4 h-4" />
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="p-2 hover:bg-white/10 rounded-lg"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed left-0 top-16 bottom-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
+        transform transition-transform duration-300 ease-in-out z-20
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <div className="h-full overflow-y-auto py-6">
+          <nav className="px-3 space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-deep-teal dark:group-hover:text-soft-gold" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-deep-teal dark:group-hover:text-soft-gold">
+                      {item.name}
+                    </span>
+                  </div>
+                  {item.badge && (
+                    <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-medium rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
+          </nav>
+
+          {/* Quick Stats */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="bg-gradient-to-br from-deep-teal/5 to-sage/5 rounded-lg p-4">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">System Status</p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-300">Server</span>
+                  <span className="flex items-center gap-1 text-emerald-600">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    Online
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-300">Database</span>
+                  <span className="flex items-center gap-1 text-emerald-600">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    Connected
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="lg:pl-64 pt-16">
+        <div className="p-4 sm:p-6 lg:p-8">
+          {children}
+        </div>
+      </main>
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-10 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+    </div>
+  )
+}

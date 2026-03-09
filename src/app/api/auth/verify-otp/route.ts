@@ -1,97 +1,72 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server'
+import { verifyOTP } from '@/lib/otp/otpService'
+import { signJWT } from '@/lib/jwt'
+import { query } from '@/lib/db'
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { email, otp, purpose } = await request.json()
-
-    if (!email || !otp) {
-      return NextResponse.json(
-        { error: 'Email and OTP are required' },
-        { status: 400 }
-      )
+    const { userId, code, purpose, requestId } = await req.json()
+    
+    // Verify OTP
+    const isValid = await verifyOTP(requestId || userId, code)
+    if (!isValid) {
+      return NextResponse.json({ error: 'Invalid or expired code.' }, { status: 400 })
     }
-
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email }
-    })
-
+    
+    // Get user from database
+    const userRes = await query(
+      `SELECT id, email, "firstName", "lastName", role, "twoFactorEnabled", "emailVerified" 
+       FROM users WHERE id = $1`,
+      [userId]
+    )
+    
+    const user = userRes.rows[0]
+    
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
+      return NextResponse.json({ error: 'User not found.' }, { status: 404 })
+    }
+    
+    // Update email verification status if this is account opening
+    if (purpose === 'ACCOUNT_OPENING') {
+      await query(
+        'UPDATE users SET "emailVerified" = true WHERE id = $1',
+        [userId]
       )
     }
-
-    // Find valid OTP in OTPRequest model
-    const validOTP = await prisma.oTPRequest.findFirst({
-      where: {
-        userId: user.id,
-        code: otp,
-        purpose: purpose || 'ACCOUNT_OPENING',
-        expiresAt: {
-          gt: new Date()
-        },
-        isVerified: false,
-        attempts: {
-          lt: 3
-        }
+    
+    // Generate JWT token
+    const token = await signJWT({ 
+      userId: user.id, 
+      email: user.email, 
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      role: user.role 
+    })
+    
+    const res = NextResponse.json({ 
+      success: true, 
+      role: user.role,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        twoFactorEnabled: user.twoFactorEnabled
       }
     })
-
-    if (!validOTP) {
-      // Increment attempts on any matching OTP
-      await prisma.oTPRequest.updateMany({
-        where: {
-          userId: user.id,
-          purpose: purpose || 'ACCOUNT_OPENING',
-          expiresAt: {
-            gt: new Date()
-          }
-        },
-        data: {
-          attempts: {
-            increment: 1
-          }
-        }
-      })
-
-      return NextResponse.json(
-        { error: 'Invalid or expired OTP' },
-        { status: 400 }
-      )
-    }
-
-    // Mark OTP as verified
-    await prisma.oTPRequest.update({
-      where: { id: validOTP.id },
-      data: {
-        isVerified: true,
-        verifiedAt: new Date(),
-      }
+    
+    res.cookies.set('auth-token', token, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production', 
+      sameSite: 'lax', 
+      maxAge: 60 * 60 * 24 * 7, 
+      path: '/' 
     })
-
-    // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: 'VERIFY_OTP',
-        details: `OTP verified for purpose: ${purpose || 'ACCOUNT_OPENING'}`,
-        status: 'SUCCESS'
-      }
-    })
-
-    return NextResponse.json(
-      { message: 'OTP verified successfully' },
-      { status: 200 }
-    )
-
-  } catch (error) {
-    console.error('Verify OTP error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    
+    return res
+  } catch (e) {
+    console.error('[verify-otp]', e)
+    return NextResponse.json({ error: 'Verification failed.' }, { status: 500 })
   }
 }

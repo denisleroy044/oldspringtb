@@ -1,75 +1,194 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useAuth } from '@/context/AuthContext'
-import { NotificationBell } from './notifications/NotificationBell'
+import { useTheme } from '@/context/ThemeContext'
+import { 
+  Bell, 
+  Search, 
+  Menu, 
+  X,
+  User,
+  Settings,
+  LogOut,
+  ChevronDown,
+  Sun,
+  Moon,
+  Monitor
+} from 'lucide-react'
 
-export function DashboardHeader() {
-  const { user, logout } = useAuth()
-  const [showUserMenu, setShowUserMenu] = useState(false)
+interface HeaderProps {
+  toggleSidebar: () => void
+  isSidebarOpen: boolean
+  isMobile: boolean
+}
+
+export function DashboardHeader({ toggleSidebar, isSidebarOpen, isMobile }: HeaderProps) {
+  const { user } = useAuth()
+  const { theme, setTheme, resolvedTheme } = useTheme()
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [showThemeMenu, setShowThemeMenu] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [notifications] = useState(3)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
+
+  const themeOptions = [
+    { value: 'light', icon: Sun, label: 'Light' },
+    { value: 'dark', icon: Moon, label: 'Dark' },
+    { value: 'system', icon: Monitor, label: 'System' },
+  ]
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <header className="fixed top-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200/20 dark:border-gray-700/30 z-40">
       <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/dashboard" className="flex items-center">
-            <div className="relative w-32 h-8">
-              <Image
-                src="/images/logo/logo.png"
-                alt="Oldspring Trust"
-                fill
-                className="object-contain object-left"
+        <div className="flex items-center justify-between h-16">
+          {/* Left section */}
+          <div className="flex items-center gap-3">
+            {/* Mobile menu button */}
+            {isMobile && (
+              <button
+                onClick={toggleSidebar}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                {isSidebarOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
+              </button>
+            )}
+
+            {/* Logo - only on mobile */}
+            {isMobile && (
+              <Link href="/dashboard" className="flex items-center">
+                <img 
+                  src="/images/logo/logo.png" 
+                  alt="Oldspring Trust" 
+                  className="h-8 w-auto"
+                />
+              </Link>
+            )}
+          </div>
+
+          {/* Center - Search (desktop only) */}
+          <div className="hidden md:block flex-1 max-w-md mx-auto">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search transactions, accounts..."
+                className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-deep-teal dark:focus:ring-soft-gold"
               />
             </div>
-          </Link>
+          </div>
 
-          {/* Right side items */}
-          <div className="flex items-center gap-4">
-            {/* Notification Bell */}
-            <NotificationBell />
-
-            {/* User Menu */}
+          {/* Right section */}
+          <div className="flex items-center gap-2">
+            {/* Theme Toggle */}
             <div className="relative">
               <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-3 focus:outline-none"
+                onClick={() => setShowThemeMenu(!showThemeMenu)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors relative"
               >
-                <div className="w-8 h-8 bg-gradient-to-br from-deep-teal to-sage rounded-full flex items-center justify-center text-white font-bold">
-                  {user?.name?.charAt(0) || 'U'}
-                </div>
-                <div className="hidden lg:block text-left">
-                  <p className="text-sm font-medium text-gray-700">
-                    {user?.name || 'User'}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {user?.email || 'user@example.com'}
-                  </p>
-                </div>
-                <svg className="w-4 h-4 text-gray-500 hidden lg:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                {resolvedTheme === 'dark' ? (
+                  <Moon className="w-5 h-5" />
+                ) : (
+                  <Sun className="w-5 h-5" />
+                )}
               </button>
 
-              {/* Dropdown Menu */}
-              {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 border border-gray-200 z-50">
+              {/* Theme dropdown menu */}
+              {showThemeMenu && (
+                <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                  {themeOptions.map((option) => {
+                    const Icon = option.icon
+                    const isActive = theme === option.value
+                    return (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setTheme(option.value as any)
+                          setShowThemeMenu(false)
+                        }}
+                        className={`w-full flex items-center gap-2 px-4 py-2 text-sm ${
+                          isActive 
+                            ? 'text-deep-teal dark:text-soft-gold bg-deep-teal/5 dark:bg-soft-gold/5' 
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        {option.label}
+                        {isActive && (
+                          <span className="ml-auto text-xs">✓</span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Notifications */}
+            <button className="relative p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+              <Bell className="w-5 h-5" />
+              {notifications > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              )}
+            </button>
+
+            {/* Profile dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center gap-2 p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <div className="w-8 h-8 bg-gradient-to-br from-deep-teal to-sage rounded-full flex items-center justify-center text-white font-semibold">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </div>
+                {!isMobile && (
+                  <>
+                    <span className="text-sm font-medium">
+                      {user?.firstName} {user?.lastName}
+                    </span>
+                    <ChevronDown className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+
+              {/* Profile dropdown menu */}
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
                   <Link
-                    href="/dashboard/account"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => setShowUserMenu(false)}
+                    href="/dashboard/profile"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => setShowProfileMenu(false)}
                   >
-                    Account Settings
+                    <User className="w-4 h-4" />
+                    Your Profile
                   </Link>
+                  <Link
+                    href="/dashboard/settings"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => setShowProfileMenu(false)}
+                  >
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </Link>
+                  <hr className="my-1 border-gray-200 dark:border-gray-700" />
                   <button
                     onClick={() => {
-                      setShowUserMenu(false)
-                      logout()
+                      setShowProfileMenu(false)
+                      // logout()
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
+                    <LogOut className="w-4 h-4" />
                     Sign Out
                   </button>
                 </div>

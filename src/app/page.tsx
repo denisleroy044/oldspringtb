@@ -513,16 +513,14 @@ export default function HomePage() {
         <section className="relative h-[600px]">
           <ImageSlider />
           
-          {/* Liquid Glass Card - FIXED VERSION */}
+          {/* Liquid Glass Card */}
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <div className="max-w-3xl mx-auto px-6">
-              <div 
-                style={{
-                  background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)) border-box',
-                  backdropFilter: 'blur(20px) saturate(180%)'
-                }}
-                className="backdrop-blur-md bg-white/10 rounded-2xl p-8 md:p-12 border border-white/20 shadow-2xl hover:backdrop-blur-xl hover:bg-white/15 transition-all duration-500 hover:shadow-[0_30px_50px_rgba(0,0,0,0.3)]"
-              >
+              <div className="backdrop-blur-md bg-white/10 rounded-2xl p-8 md:p-12 border border-white/20 shadow-2xl
+                            [background:linear-gradient(135deg,rgba(255,255,255,0.1),rgba(255,255,255,0.05))_border-box]
+                            [backdrop-filter:blur(20px)_saturate(180%)]
+                            hover:backdrop-blur-xl hover:bg-white/15 transition-all duration-500
+                            hover:shadow-[0_30px_50px_rgba(0,0,0,0.3)]">
                 
                 {/* Glass shine effect */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent 
@@ -691,7 +689,7 @@ export default function HomePage() {
                       <p className="text-xs text-text-soft font-light">Customer since 2018</p>
                     </div>
                   </div>
-                  <p className="text-text-soft font-light">&quot;The team at Oldspring Trust has been incredible. They helped me buy my first home and I couldn&apos;t be happier!&quot;</p>
+                  <p className="text-text-soft font-light">"The team at Oldspring Trust has been incredible. They helped me buy my first home and I couldn't be happier!"</p>
                 </div>
               </ScrollAnimation>
 
@@ -706,7 +704,7 @@ export default function HomePage() {
                       <p className="text-xs text-text-soft font-light">Small Business Owner</p>
                     </div>
                   </div>
-                  <p className="text-text-soft font-light">&quot;Their business banking solutions helped my company grow. Highly recommended!&quot;</p>
+                  <p className="text-text-soft font-light">"Their business banking solutions helped my company grow. Highly recommended!"</p>
                 </div>
               </ScrollAnimation>
 
@@ -721,7 +719,7 @@ export default function HomePage() {
                       <p className="text-xs text-text-soft font-light">Retiree</p>
                     </div>
                   </div>
-                  <p className="text-text-soft font-light">&quot;I&apos;ve been banking here for over 20 years. They treat me like family.&quot;</p>
+                  <p className="text-text-soft font-light">"I've been banking here for over 20 years. They treat me like family."</p>
                 </div>
               </ScrollAnimation>
             </div>

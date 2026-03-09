@@ -1,13 +1,21 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Outfit, Poppins } from 'next/font/google'
 import './globals.css'
-import { AuthProvider } from '@/context/AuthContext'
 
-const inter = Inter({ subsets: ['latin'] })
+const outfit = Outfit({ 
+  subsets: ['latin'],
+  variable: '--font-outfit',
+})
+
+const poppins = Poppins({ 
+  weight: ['300', '400', '500', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-poppins',
+})
 
 export const metadata: Metadata = {
-  title: 'Oldspring Trust',
-  description: 'Building lasting relationships based on trust since 1945',
+  title: 'Oldspring Trust Bank',
+  description: 'Modern banking for modern lives',
 }
 
 export default function RootLayout({
@@ -16,11 +24,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+    <html lang="en" className={`${outfit.variable} ${poppins.variable}`}>
+      <body className="font-poppins antialiased">
+        {children}
       </body>
     </html>
   )

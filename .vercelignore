@@ -1,0 +1,22 @@
+# Ignore everything first
+*
+
+# Then specifically allow ONLY these folders/files
+!src/app/auth/
+!src/app/dashboard/
+!src/app/admin/
+!src/app/api/auth/
+!src/app/api/dashboard/
+!src/app/api/admin/
+!src/components/dashboard/
+!src/context/
+!src/lib/auth/
+!src/lib/db/
+!public/images/logo/
+!public/images/3d/
+!package.json
+!next.config.js
+!vercel.json
+!node_modules/next/
+!node_modules/react/
+!node_modules/react-dom/

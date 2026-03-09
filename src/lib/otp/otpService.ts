@@ -1,110 +1,111 @@
-// Store OTPs (in production, use Redis or database)
-const otpStore: Map<string, { code: string; expires: Date; attempts: number }> = new Map();
+// In-memory OTP store (in production, use database)
+const otpStore = new Map<string, { code: string; expires: Date; attempts: number }>()
 
-// Generate a random 6-digit OTP
-export const generateOTP = (): string => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
+export function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
 
-// Request OTP for a user - NOW ACCEPTS NAME PARAMETER
-export const requestOTP = async (
+export async function requestOTP(
   identifier: string,
   purpose: string,
   userName?: string
-): Promise<{ success: boolean; requestId?: string; message?: string; error?: string }> => {
+): Promise<{ success: boolean; requestId?: string; message?: string; error?: string }> {
   try {
-    // Generate OTP
-    const otp = generateOTP();
-    const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const otp = generateOTP()
+    const requestId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
     
-    // Store OTP with 10-minute expiration
     otpStore.set(requestId, {
       code: otp,
       expires: new Date(Date.now() + 10 * 60 * 1000),
       attempts: 0
-    });
+    })
 
-    // For email
-    if (identifier.includes('@')) {
-      // Call our API route with the user's name
-      const response = await fetch('/api/send-otp', {
+    console.log('\n' + '🔐'.repeat(30))
+    console.log('🔐 OTP GENERATED')
+    console.log('🔐'.repeat(30))
+    console.log(`📧 To: ${identifier}`)
+    console.log(`📋 Purpose: ${purpose}`)
+    console.log(`👤 Name: ${userName || 'Customer'}`)
+    console.log(`🔑 Code: ${otp}`)
+    console.log(`🆔 Request ID: ${requestId}`)
+    console.log('🔐'.repeat(30) + '\n')
+
+    // Call server API to send email (server-side only)
+    if (typeof window === 'undefined') {
+      // Server-side: import and use nodemailer directly
+      const { sendOtpEmail } = await import('@/lib/server/email.server')
+      await sendOtpEmail({
+        to: identifier,
+        firstName: userName || 'Customer',
+        otp,
+        purpose,
+      })
+    } else {
+      // Client-side: call API route
+      fetch('/api/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email: identifier, 
-          otp,
-          name: userName  // Pass the user's name for personalization
-        })
-      });
-
-      const result = await response.json();
-      
-      if (!result.success) {
-        otpStore.delete(requestId);
-        return { success: false, error: 'Failed to send email' };
-      }
-      
-      console.log(`✅ OTP sent to ${identifier} for ${purpose}`);
+        body: JSON.stringify({ email: identifier, otp, name: userName, purpose }),
+      }).catch(err => console.error('Background email error:', err))
     }
 
     return {
       success: true,
       requestId,
       message: 'OTP sent successfully'
-    };
+    }
   } catch (error) {
-    console.error('Error sending OTP:', error);
-    return {
-      success: false,
-      error: 'Failed to send OTP'
-    };
+    console.error('Error sending OTP:', error)
+    return { success: false, error: 'Failed to send OTP' }
   }
-};
+}
 
-// Verify OTP
-export const verifyOTP = async (
+export async function verifyOTP(
   requestId: string,
   code: string
-): Promise<boolean> => {
-  const otpData = otpStore.get(requestId);
+): Promise<boolean> {
+  const otpData = otpStore.get(requestId)
   
   if (!otpData) {
-    return false;
+    console.log('❌ OTP verification failed: No request ID found')
+    return false
   }
 
   // Check if expired
   if (new Date() > otpData.expires) {
-    otpStore.delete(requestId);
-    return false;
+    console.log('❌ OTP verification failed: Code expired')
+    otpStore.delete(requestId)
+    return false
   }
 
   // Check attempts (max 3 attempts)
   if (otpData.attempts >= 3) {
-    otpStore.delete(requestId);
-    return false;
+    console.log('❌ OTP verification failed: Too many attempts')
+    otpStore.delete(requestId)
+    return false
   }
 
   // Increment attempts
-  otpData.attempts++;
+  otpData.attempts++
 
   // Verify code
-  if (otpData.code === code) {
-    otpStore.delete(requestId);
-    return true;
+  const isValid = otpData.code === code
+  console.log(`🔐 OTP verification: ${isValid ? '✅ SUCCESS' : '❌ FAILED'} (Attempt ${otpData.attempts}/3)`)
+  
+  if (isValid) {
+    otpStore.delete(requestId)
+    return true
   }
 
-  return false;
-};
+  return false
+}
 
-// Resend OTP - UPDATED WITH NAME PARAMETER
-export const resendOTP = async (
+export async function resendOTP(
   requestId: string,
   identifier: string,
   userName?: string
-): Promise<{ success: boolean; newRequestId?: string; error?: string }> => {
-  // Delete old OTP
-  otpStore.delete(requestId);
-  
-  // Request new OTP with user's name
-  return requestOTP(identifier, 'resend', userName);
-};
+): Promise<{ success: boolean; newRequestId?: string; error?: string }> {
+  otpStore.delete(requestId)
+  const result = await requestOTP(identifier, 'resend', userName)
+  return result
+}

@@ -1,60 +1,57 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ScrollAnimation } from '@/components/ui/ScrollAnimation'
-import Image from 'next/image'
+import { Mail, RefreshCw, Loader2 } from 'lucide-react'
 
 export default function OTPContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const purpose = searchParams.get('purpose') || 'ACCOUNT_OPENING'
   
-  const [otp, setOtp] = useState(['', '', '', '', '', ''])
-  const [timer, setTimer] = useState(60)
-  const [canResend, setCanResend] = useState(false)
-  const [error, setError] = useState('')
+  const [userId, setUserId] = useState('')
+  const [requestId, setRequestId] = useState('')
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(''))
   const [loading, setLoading] = useState(false)
-  const [email, setEmail] = useState('')
+  const [resending, setResending] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [countdown, setCountdown] = useState(60)
+  const [canResend, setCanResend] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   useEffect(() => {
-    // Get email from session storage
-    if (purpose === '2FA') {
-      const storedEmail = sessionStorage.getItem('2fa_email')
-      if (storedEmail) setEmail(storedEmail)
-    } else {
-      const userEmail = sessionStorage.getItem('signup_email')
-      if (userEmail) setEmail(userEmail)
+    const id = sessionStorage.getItem('otp_user_id') || ''
+    const rid = sessionStorage.getItem('otp_request_id') || ''
+    
+    if (!id) { 
+      router.push('/auth/login'); 
+      return 
     }
-  }, [purpose])
+    
+    setUserId(id)
+    setRequestId(rid)
+  }, [router])
 
   useEffect(() => {
-    if (timer > 0) {
-      const interval = setInterval(() => {
-        setTimer((prev) => prev - 1)
-      }, 1000)
-      return () => clearInterval(interval)
-    } else {
-      setCanResend(true)
+    if (countdown <= 0) { 
+      setCanResend(true); 
+      return 
     }
-  }, [timer])
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [countdown])
 
-  const handleChange = (index: number, value: string) => {
-    if (value.length > 1) return
-
+  const handleInput = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return
     const newOtp = [...otp]
-    newOtp[index] = value
+    newOtp[index] = value.slice(-1)
     setOtp(newOtp)
     setError('')
-
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus()
-    }
-
-    if (index === 5 && value && newOtp.every(digit => digit !== '')) {
-      handleSubmit(newOtp.join(''))
+    if (value && index < 5) inputRefs.current[index + 1]?.focus()
+    if (newOtp.every(d => d !== '') && newOtp.join('').length === 6) {
+      handleVerify(newOtp.join(''))
     }
   }
 
@@ -64,210 +61,181 @@ export default function OTPContent() {
     }
   }
 
-  const handleSubmit = async (otpCode: string) => {
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (text.length === 6) {
+      setOtp(text.split(''))
+      inputRefs.current[5]?.focus()
+      handleVerify(text)
+    }
+  }
+
+  const handleVerify = async (code: string) => {
+    if (code.length !== 6) { 
+      setError('Please enter all 6 digits.'); 
+      return 
+    }
+    
     setLoading(true)
     setError('')
-
+    
     try {
-      const response = await fetch('/api/auth/verify-otp', {
+      const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp: otpCode, purpose }),
+        body: JSON.stringify({ userId, code, purpose, requestId }),
+        credentials: 'include',
       })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Invalid verification code')
+      
+      const data = await res.json()
+      
+      if (!res.ok) { 
+        setError(data.error || 'Invalid code.')
+        setOtp(Array(6).fill(''))
+        inputRefs.current[0]?.focus()
+        return 
       }
-
-      if (purpose === '2FA') {
-        sessionStorage.removeItem('2fa_user_id')
-        sessionStorage.removeItem('2fa_email')
-        router.push('/dashboard')
-      } else {
-        sessionStorage.removeItem('signup_email')
-        router.push('/auth/login?verified=true')
-      }
-    } catch (err: any) {
-      setError(err.message || 'Verification failed')
-      setOtp(['', '', '', '', '', ''])
-      inputRefs.current[0]?.focus()
+      
+      sessionStorage.removeItem('otp_user_id')
+      sessionStorage.removeItem('otp_purpose')
+      sessionStorage.removeItem('otp_request_id')
+      
+      router.push(data.role === 'admin' ? '/admin' : '/dashboard')
+    } catch {
+      setError('Network error. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
   const handleResend = async () => {
-    setTimer(60)
-    setCanResend(false)
+    if (!canResend) return
+    
+    setResending(true)
     setError('')
-
+    setSuccess('')
+    
     try {
-      const response = await fetch('/api/auth/resend-otp', {
+      const res = await fetch('/api/auth/resend-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, purpose }),
+        body: JSON.stringify({ userId, purpose, requestId }),
       })
-
-      if (!response.ok) throw new Error('Failed to resend code')
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend code')
-      setTimer(0)
-      setCanResend(true)
+      
+      const data = await res.json()
+      
+      if (!res.ok) { 
+        setError(data.error || 'Failed to resend.')
+        return 
+      }
+      
+      setSuccess('A new code has been sent to your email.')
+      setOtp(Array(6).fill(''))
+      inputRefs.current[0]?.focus()
+      setCountdown(60)
+      setCanResend(false)
+      
+      if (data.requestId) {
+        sessionStorage.setItem('otp_request_id', data.requestId)
+        setRequestId(data.requestId)
+      }
+    } catch {
+      setError('Failed to resend. Please try again.')
+    } finally {
+      setResending(false)
     }
   }
 
-  const getPurposeTitle = () => {
-    switch(purpose) {
-      case '2FA': return 'Two-Factor Authentication'
-      case 'PASSWORD_RESET': return 'Reset Password'
-      default: return 'Verify Your Email'
-    }
-  }
-
-  const getPurposeDescription = () => {
-    switch(purpose) {
-      case '2FA': return 'Enter the 6-digit code from your authenticator app'
-      default: return 'Enter the 6-digit code sent to your email'
-    }
+  const titleMap: Record<string, string> = {
+    ACCOUNT_OPENING: 'Verify your email',
+    '2FA': 'Two-factor authentication',
+    PASSWORD_RESET: 'Reset your password',
   }
 
   return (
-    <div className="grid lg:grid-cols-2 gap-12 items-center">
-      {/* Left Column - Brand Message */}
-      <ScrollAnimation animation="fadeInLeft" className="hidden lg:block">
-        <div className="pr-12">
-          <div className="relative w-24 h-24 mb-8">
-            <div className="absolute inset-0 bg-soft-gold/30 rounded-2xl blur-2xl"></div>
-            <div className="relative w-full h-full bg-gradient-to-br from-deep-teal to-sage rounded-2xl flex items-center justify-center">
-              <span className="text-white font-bold text-4xl">O</span>
-            </div>
+    <div className="flex justify-center items-center min-h-[500px]">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-20 h-20 bg-gradient-to-br from-deep-teal to-sage rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
+            <Mail className="w-10 h-10 text-white" />
           </div>
-          
-          <h1 className="text-5xl font-black text-deep-teal mb-6 leading-tight">
-            {getPurposeTitle()}
-          </h1>
-          
-          <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-            {getPurposeDescription()}
-          </p>
+          <h2 className="text-3xl font-bold text-deep-teal mb-2">{titleMap[purpose] || 'Verify your email'}</h2>
+          <p className="text-gray-600">We've sent a 6-digit code to your email address.</p>
+        </div>
 
-          <div className="space-y-4">
-            {[
-              'Code expires in 10 minutes',
-              'One-time use only',
-              'Secure verification process',
-              'Instant account access'
-            ].map((feature, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-soft-gold/20 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-soft-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <span className="text-gray-700">{feature}</span>
-              </div>
+        {/* Messages */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-start gap-2">
+            <span className="text-lg">⚠️</span>
+            <span>{error}</span>
+          </div>
+        )}
+        
+        {success && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm flex items-start gap-2">
+            <span className="text-lg">✅</span>
+            <span>{success}</span>
+          </div>
+        )}
+
+        {/* OTP Input */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl p-8 border border-white/50">
+          <div className="flex gap-2 justify-center mb-8" onPaste={handlePaste}>
+            {otp.map((digit, i) => (
+              <input
+                key={i}
+                ref={el => { inputRefs.current[i] = el }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={e => handleInput(i, e.target.value)}
+                onKeyDown={e => handleKeyDown(i, e)}
+                className={`w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl outline-none transition-all ${
+                  digit
+                    ? 'border-soft-gold bg-soft-gold/5 text-deep-teal'
+                    : 'border-gray-200 focus:border-soft-gold'
+                }`}
+              />
             ))}
           </div>
 
-          <div className="mt-12 bg-white/50 backdrop-blur-sm rounded-xl p-6 border-l-4 border-soft-gold">
-            <p className="text-gray-600 text-sm">
-              <span className="font-semibold text-deep-teal">Need help?</span> Contact our support team at{' '}
-              <a href="mailto:support@oldspring.com" className="text-soft-gold hover:underline">
-                support@oldspring.com
-              </a>
-            </p>
-          </div>
-        </div>
-      </ScrollAnimation>
+          {/* Verify Button */}
+          <button
+            onClick={() => handleVerify(otp.join(''))}
+            disabled={loading || otp.join('').length !== 6}
+            className="w-full h-12 bg-gradient-to-r from-deep-teal to-sage text-white font-semibold rounded-xl disabled:opacity-50 flex items-center justify-center mb-4"
+          >
+            {loading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Verifying...</> : 'Verify Code'}
+          </button>
 
-      {/* Right Column - OTP Form */}
-      <ScrollAnimation animation="fadeInRight">
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-10 border border-white/50">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-deep-teal mb-2">Verification Code</h2>
-            <p className="text-gray-600">
-              {email ? `Code sent to ${email}` : 'Enter the 6-digit code'}
-            </p>
-          </div>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 text-red-800 border border-red-200 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
-                Verification Code
-              </label>
-              <div className="flex justify-center gap-3">
-                {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(el) => { inputRefs.current[index] = el }}
-                    type="text"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
-                    className="w-14 h-14 text-center text-2xl font-semibold border border-gray-200 rounded-xl focus:ring-2 focus:ring-soft-gold focus:border-transparent transition-all bg-white/50"
-                    disabled={loading}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="text-center">
-              {!canResend ? (
-                <p className="text-sm text-gray-500">
-                  Resend code in <span className="font-medium text-deep-teal">{timer}s</span>
-                </p>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={loading}
-                  className="text-sm font-medium text-soft-gold hover:text-deep-teal transition-colors disabled:opacity-50"
-                >
-                  Resend Code
-                </button>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleSubmit(otp.join(''))}
-              disabled={otp.some(digit => !digit) || loading}
-              className="w-full bg-gradient-to-r from-deep-teal to-sage text-white py-4 rounded-xl font-semibold hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden group disabled:opacity-50"
-            >
-              <span className="absolute inset-0 bg-gradient-to-r from-soft-gold/20 via-white/30 to-soft-gold/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
-              <span className="relative">{loading ? 'Verifying...' : 'Verify & Continue'}</span>
-            </button>
-
-            <div className="flex items-center justify-between mt-6">
-              <Link 
-                href={purpose === '2FA' ? '/auth/login' : '/auth/signup'} 
-                className="text-sm text-gray-600 hover:text-soft-gold transition-colors inline-flex items-center gap-2"
+          {/* Resend */}
+          <div className="text-center">
+            {canResend ? (
+              <button 
+                onClick={handleResend} 
+                disabled={resending} 
+                className="flex items-center gap-2 mx-auto text-sm text-deep-teal font-semibold hover:text-soft-gold transition-colors disabled:opacity-50"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back
-              </Link>
-              
-              <Link 
-                href="/auth/login" 
-                className="text-sm text-gray-600 hover:text-soft-gold transition-colors"
-              >
-                Back to Sign In
-              </Link>
-            </div>
-          </form>
+                <RefreshCw className={`w-4 h-4 ${resending ? 'animate-spin' : ''}`} />
+                {resending ? 'Sending...' : 'Resend code'}
+              </button>
+            ) : (
+              <p className="text-sm text-gray-500">
+                Resend code in <span className="font-bold text-deep-teal">{countdown}s</span>
+              </p>
+            )}
+          </div>
+
+          {/* Back to Login */}
+          <p className="text-center text-sm text-gray-500 mt-6">
+            <Link href="/auth/login" className="text-deep-teal font-medium hover:text-soft-gold transition-colors">
+              ← Back to login
+            </Link>
+          </p>
         </div>
-      </ScrollAnimation>
+      </div>
     </div>
   )
 }

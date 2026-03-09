@@ -1,0 +1,41 @@
+#!/bin/bash
+
+echo "🔧 Running Complete Database Fix"
+echo "================================"
+echo ""
+
+echo "📦 Copy and run this SQL in your Neon console:"
+echo ""
+echo "========================================="
+cat complete-database-fix.sql
+echo "========================================="
+echo ""
+
+read -p "Have you run the SQL above? (y/n) " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Please run the SQL first, then continue"
+    exit 1
+fi
+
+echo ""
+echo "✅ Database fixes applied"
+echo ""
+
+echo "📦 Clearing Next.js cache..."
+rm -rf .next
+echo "✅ Cache cleared"
+echo ""
+
+echo "🎉 All fixes complete!"
+echo ""
+echo "Run: npm run dev"
+echo ""
+echo "This will fix:"
+echo "  ✅ Notifications table - added missing columns"
+echo "  ✅ Statements table - created with correct schema"
+echo "  ✅ Statement generation function - created"
+echo "  ✅ Sample statements - generated for demo user"
+echo ""
+
+chmod +x run-complete-fix.sh

@@ -1,388 +1,650 @@
 'use client'
 
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
+import {
+  Plus,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  Calendar,
+  DollarSign,
+  Zap,
+  Phone,
+  Home,
+  Shield,
+  Repeat,
+  CreditCard,
+  Landmark,
+  MoreHorizontal,
+  ChevronRight,
+  Loader2,
+  Bell,
+  Eye,
+  EyeOff,
+  FileText,
+  Download,
+  Filter,
+  Search,
+  Trash2,
+  Edit,
+  Copy,
+  ArrowUpRight,
+  ArrowDownLeft
+} from 'lucide-react'
 
 interface Bill {
   id: string
-  company: string
-  accountNumber: string
-  amount: number
-  dueDate: string
+  billName: string
+  billNumber?: string
   category: string
-  status: 'PENDING' | 'PAID' | 'OVERDUE' | 'SCHEDULED'
+  categoryIcon: string
+  amount: number
+  currency: string
+  dueDate: string
+  recurring: boolean
+  recurringFrequency?: string
   autoPay: boolean
+  status: 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELLED'
+  paymentReference?: string
+  paidAt?: string
+  accountNumber?: string
+  accountType?: string
 }
 
-// Mock function to simulate OTP request
-const requestOTP = async (email: string, purpose: string, name?: string) => {
-  console.log(`Requesting OTP for ${email} for ${purpose}`)
-  // Simulate API call
-  return { requestId: 'mock-request-id' }
+interface PaymentRequest {
+  id: string
+  billName: string
+  amount: number
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PROCESSED'
+  reference: string
+  createdAt: string
+  dueDate: string
+  accountNumber?: string
 }
 
 export default function BillsPage() {
-  return (
-    <>
-      <Header />
-      <main className="min-h-screen bg-cream">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <BillsContent />
-        </div>
-      </main>
-      <Footer />
-    </>
-  )
-}
-
-function BillsContent() {
   const router = useRouter()
   const { user } = useAuth()
+  
   const [bills, setBills] = useState<Bill[]>([])
+  const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([])
+  const [categories, setCategories] = useState<any[]>([])
+  const [accounts, setAccounts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
-  const [showPayModal, setShowPayModal] = useState(false)
-  const [showOtpModal, setShowOtpModal] = useState(false)
-  const [otpRequestId, setOtpRequestId] = useState('')
-  const [otp, setOtp] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState('account')
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [showAddBill, setShowAddBill] = useState(false)
+  const [showPayBill, setShowPayBill] = useState<Bill | null>(null)
+  const [selectedAccount, setSelectedAccount] = useState('')
+  const [filter, setFilter] = useState('all')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
-    // Mock data - replace with actual API call
-    const mockBills: Bill[] = [
-      {
-        id: '1',
-        company: 'Electric Company',
-        accountNumber: '123456789',
-        amount: 145.67,
-        dueDate: '2024-04-15',
-        category: 'Utilities',
-        status: 'PENDING',
-        autoPay: false
-      },
-      {
-        id: '2',
-        company: 'Water Services',
-        accountNumber: '987654321',
-        amount: 89.50,
-        dueDate: '2024-04-20',
-        category: 'Utilities',
-        status: 'PENDING',
-        autoPay: true
-      },
-      {
-        id: '3',
-        company: 'Internet Provider',
-        accountNumber: '456789123',
-        amount: 79.99,
-        dueDate: '2024-04-10',
-        category: 'Internet',
-        status: 'OVERDUE',
-        autoPay: false
-      },
-      {
-        id: '4',
-        company: 'Credit Card',
-        accountNumber: '****1234',
-        amount: 450.00,
-        dueDate: '2024-04-25',
-        category: 'Credit Card',
-        status: 'PENDING',
-        autoPay: true
-      }
-    ]
-
-    setTimeout(() => {
-      setBills(mockBills)
-      setLoading(false)
-    }, 1000)
+    fetchData()
   }, [])
 
-  const handlePayBill = (bill: Bill) => {
-    setSelectedBill(bill)
-    setShowPayModal(true)
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      
+      // Fetch bills
+      const billsRes = await fetch('/api/bills')
+      const billsData = await billsRes.json()
+      setBills(billsData.bills || [])
+
+      // Fetch payment requests
+      const requestsRes = await fetch('/api/bills/payments')
+      const requestsData = await requestsRes.json()
+      setPaymentRequests(requestsData.requests || [])
+
+      // Fetch categories
+      const categoriesRes = await fetch('/api/bills/categories')
+      const categoriesData = await categoriesRes.json()
+      setCategories(categoriesData.categories || [])
+
+      // Fetch accounts for payment
+      const accountsRes = await fetch('/api/accounts')
+      const accountsData = await accountsRes.json()
+      setAccounts(accountsData.accounts || [])
+
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handlePaymentSubmit = async () => {
-    if (!user?.email) {
-      alert('Please log in to continue')
-      return
-    }
-
-    setIsProcessing(true)
+  const handleAddBill = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const formData = new FormData(e.target as HTMLFormElement)
+    
     try {
-      const response = await requestOTP(user.email, 'bill payment', user.name || undefined)
-      if (response.requestId) {
-        setOtpRequestId(response.requestId)
-        setShowPayModal(false)
-        setShowOtpModal(true)
+      const response = await fetch('/api/bills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          billName: formData.get('billName'),
+          billNumber: formData.get('billNumber'),
+          categoryId: formData.get('category'),
+          amount: parseFloat(formData.get('amount') as string),
+          dueDate: formData.get('dueDate'),
+          recurring: formData.get('recurring') === 'on',
+          recurringFrequency: formData.get('recurringFrequency'),
+          autoPay: formData.get('autoPay') === 'on',
+          notes: formData.get('notes')
+        })
+      })
+
+      if (response.ok) {
+        setShowAddBill(false)
+        fetchData()
       }
     } catch (error) {
-      console.error('Failed to request OTP:', error)
-    } finally {
-      setIsProcessing(false)
+      console.error('Error adding bill:', error)
     }
   }
 
-  const handleOtpSubmit = async () => {
-    if (!otp || !selectedBill) return
+  const handlePayBill = async () => {
+    if (!showPayBill || !selectedAccount) return
 
-    setIsProcessing(true)
     try {
-      // Verify OTP and process payment
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Update bill status
-      setBills(prev => prev.map(bill => 
-        bill.id === selectedBill.id 
-          ? { ...bill, status: 'PAID' as const }
-          : bill
-      ))
-      
-      setShowOtpModal(false)
-      setOtp('')
-      setSelectedBill(null)
-      
-      // Show success message
-      alert('Payment processed successfully!')
+      const response = await fetch('/api/bills/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          billId: showPayBill.id,
+          accountId: selectedAccount,
+          amount: showPayBill.amount
+        })
+      })
+
+      if (response.ok) {
+        setShowPayBill(null)
+        setSelectedAccount('')
+        fetchData()
+      }
     } catch (error) {
-      console.error('Failed to process payment:', error)
-    } finally {
-      setIsProcessing(false)
+      console.error('Error paying bill:', error)
     }
   }
 
-  const handleToggleAutoPay = (billId: string) => {
-    setBills(prev => prev.map(bill =>
-      bill.id === billId
-        ? { ...bill, autoPay: !bill.autoPay }
-        : bill
-    ))
-  }
-
-  const getStatusColor = (status: string) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case 'PAID':
-        return 'text-green-600 bg-green-100'
-      case 'OVERDUE':
-        return 'text-red-600 bg-red-100'
+        return <CheckCircle className="w-4 h-4 text-green-500" />
       case 'PENDING':
-        return 'text-yellow-600 bg-yellow-100'
-      case 'SCHEDULED':
-        return 'text-blue-600 bg-blue-100'
+        return <Clock className="w-4 h-4 text-yellow-500" />
+      case 'OVERDUE':
+        return <AlertCircle className="w-4 h-4 text-red-500" />
+      case 'CANCELLED':
+        return <XCircle className="w-4 h-4 text-gray-500" />
       default:
-        return 'text-gray-600 bg-gray-100'
+        return <Clock className="w-4 h-4 text-gray-400" />
     }
   }
 
-  const totalDue = bills
-    .filter(bill => bill.status !== 'PAID')
-    .reduce((sum, bill) => sum + bill.amount, 0)
+  const getCategoryIcon = (icon: string) => {
+    const icons: Record<string, any> = {
+      'zap': Zap,
+      'phone': Phone,
+      'home': Home,
+      'shield': Shield,
+      'repeat': Repeat,
+      'credit-card': CreditCard,
+      'landmark': Landmark,
+      'more-horizontal': MoreHorizontal
+    }
+    const Icon = icons[icon] || MoreHorizontal
+    return <Icon className="w-4 h-4" />
+  }
 
-  if (!user) {
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency
+    }).format(amount)
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today'
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return 'Tomorrow'
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    }
+  }
+
+  const isOverdue = (dueDate: string) => {
+    return new Date(dueDate) < new Date()
+  }
+
+  const filteredBills = bills.filter(bill => {
+    if (filter === 'pending') return bill.status === 'PENDING'
+    if (filter === 'paid') return bill.status === 'PAID'
+    if (filter === 'overdue') return bill.status === 'OVERDUE'
+    return true
+  }).filter(bill =>
+    bill.billName.toLowerCase().includes(search.toLowerCase()) ||
+    bill.category?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const pendingRequests = paymentRequests.filter(r => r.status === 'PENDING')
+
+  if (loading) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">Please log in to view your bills</p>
-        <Link href="/auth/login" className="mt-4 inline-block bg-deep-teal text-white px-6 py-3 rounded-lg hover:bg-soft-gold transition-colors">
-          Go to Login
-        </Link>
+      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-deep-teal mx-auto mb-4" />
+          <p className="text-gray-500">Loading your bills...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-deep-teal">Bills & Payments</h1>
-        <p className="text-gray-600 mt-2">Manage and pay your bills securely</p>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Total Due</h3>
-          <p className="text-3xl font-bold text-deep-teal">${totalDue.toFixed(2)}</p>
-          <p className="text-sm text-gray-500 mt-2">{bills.filter(b => b.status !== 'PAID').length} bills pending</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-deep-teal">Bills & Payments</h1>
+          <p className="text-gray-500 text-sm mt-1">Manage and pay your bills</p>
         </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Auto-Pay Enabled</h3>
-          <p className="text-3xl font-bold text-deep-teal">{bills.filter(b => b.autoPay).length}</p>
-          <p className="text-sm text-gray-500 mt-2">Bills on auto-pay</p>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Next Due Date</h3>
-          <p className="text-3xl font-bold text-deep-teal">
-            {bills
-              .filter(b => b.status !== 'PAID')
-              .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0]?.dueDate || 'N/A'}
-          </p>
-          <p className="text-sm text-gray-500 mt-2">Closest due date</p>
+        <div className="flex items-center gap-3">
+          {pendingRequests.length > 0 && (
+            <div className="relative">
+              <Bell className="w-5 h-5 text-soft-gold" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                {pendingRequests.length}
+              </span>
+            </div>
+          )}
+          <button
+            onClick={() => setShowAddBill(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-deep-teal to-sage btn-shimmer btn-shimmer text-white rounded-lg hover:shadow-lg transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Add Bill
+          </button>
         </div>
       </div>
 
-      {/* Bills List */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h2 className="text-lg font-semibold text-deep-teal">Your Bills</h2>
+      {/* Search and Filter */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search bills..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+          />
         </div>
+        <div className="flex gap-2">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+          >
+            <option value="all">All Bills</option>
+            <option value="pending">Pending</option>
+            <option value="paid">Paid</option>
+            <option value="overdue">Overdue</option>
+          </select>
+        </div>
+      </div>
 
-        {loading ? (
-          <div className="p-12 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-deep-teal mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading your bills...</p>
+      {/* Bills Grid */}
+      {filteredBills.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-lg p-12 text-center border border-sage/20">
+          <div className="w-20 h-20 bg-soft-gold/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-10 h-10 text-soft-gold" />
           </div>
-        ) : bills.length === 0 ? (
-          <div className="p-12 text-center">
-            <p className="text-gray-600">No bills found</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {bills.map((bill) => (
-              <div key={bill.id} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex-1 min-w-[200px]">
-                    <h3 className="text-lg font-semibold text-deep-teal">{bill.company}</h3>
-                    <p className="text-sm text-gray-500 mt-1">Account: {bill.accountNumber}</p>
-                    <p className="text-xs text-gray-400 mt-1">Category: {bill.category}</p>
+          <h3 className="text-lg font-semibold text-deep-teal mb-2">No bills found</h3>
+          <p className="text-gray-500 mb-6">Add your first bill to get started</p>
+          <button
+            onClick={() => setShowAddBill(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-deep-teal to-sage btn-shimmer btn-shimmer text-white rounded-lg hover:shadow-lg transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Add a Bill
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredBills.map((bill) => (
+            <div
+              key={bill.id}
+              className="bg-white rounded-xl shadow-lg p-6 border border-sage/20 hover:shadow-xl transition-all"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    bill.status === 'PAID' ? 'bg-green-100' :
+                    bill.status === 'OVERDUE' ? 'bg-red-100' : 'bg-soft-gold/10'
+                  }`}>
+                    {getCategoryIcon(bill.categoryIcon)}
                   </div>
-
-                  <div className="text-right">
-                    <p className="text-xl font-bold text-deep-teal">${bill.amount.toFixed(2)}</p>
-                    <p className="text-sm text-gray-500">Due: {new Date(bill.dueDate).toLocaleDateString()}</p>
-                    <span className={`inline-block mt-2 px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(bill.status)}`}>
-                      {bill.status}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 text-sm text-gray-600">
-                      <input
-                        type="checkbox"
-                        checked={bill.autoPay}
-                        onChange={() => handleToggleAutoPay(bill.id)}
-                        className="rounded border-gray-300 text-soft-gold focus:ring-soft-gold"
-                      />
-                      Auto-pay
-                    </label>
-
-                    {bill.status !== 'PAID' && (
-                      <button
-                        onClick={() => handlePayBill(bill)}
-                        className="bg-deep-teal text-white px-4 py-2 rounded-lg hover:bg-soft-gold transition-colors"
-                      >
-                        Pay Now
-                      </button>
-                    )}
+                  <div>
+                    <h3 className="font-semibold text-deep-teal">{bill.billName}</h3>
+                    <p className="text-xs text-gray-500">{bill.category}</p>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Pay Bill Modal */}
-      {showPayModal && selectedBill && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-deep-teal mb-4">Pay Bill</h2>
-            
-            <div className="space-y-4 mb-6">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-500">Company</p>
-                <p className="font-semibold">{selectedBill.company}</p>
-              </div>
-              
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-500">Amount</p>
-                <p className="font-semibold text-2xl text-deep-teal">${selectedBill.amount.toFixed(2)}</p>
+                {getStatusIcon(bill.status)}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Method
-                </label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Amount</span>
+                  <span className="font-bold text-deep-teal">{formatCurrency(bill.amount, bill.currency)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Due Date</span>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3 text-gray-400" />
+                    <span className={`text-sm font-medium ${
+                      isOverdue(bill.dueDate) && bill.status === 'PENDING' ? 'text-red-600' : 'text-gray-600'
+                    }`}>
+                      {formatDate(bill.dueDate)}
+                    </span>
+                  </div>
+                </div>
+                {bill.billNumber && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Account</span>
+                    <span className="text-sm font-mono text-gray-600">{bill.billNumber}</span>
+                  </div>
+                )}
+                {bill.recurring && (
+                  <div className="flex items-center gap-1 text-xs text-soft-gold">
+                    <Repeat className="w-3 h-3" />
+                    <span>Recurring {bill.recurringFrequency}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                {bill.status !== 'PAID' && (
+                  <button
+                    onClick={() => setShowPayBill(bill)}
+                    className="flex-1 bg-gradient-to-r from-deep-teal to-sage btn-shimmer btn-shimmer text-white py-2 rounded-lg text-sm font-medium hover:shadow-md transition-all"
+                  >
+                    Pay Bill
+                  </button>
+                )}
+                <Link
+                  href={`/dashboard/bills/${bill.id}`}
+                  className="px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <option value="account">Checking Account (****1234)</option>
-                  <option value="savings">Savings Account (****5678)</option>
-                  <option value="credit">Credit Card (****9012)</option>
-                </select>
+                  <ChevronRight className="w-4 h-4 text-gray-500" />
+                </Link>
               </div>
-            </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowPayModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePaymentSubmit}
-                disabled={isProcessing}
-                className="flex-1 bg-deep-teal text-white px-4 py-2 rounded-lg hover:bg-soft-gold transition-colors disabled:opacity-50"
-              >
-                {isProcessing ? 'Processing...' : 'Continue'}
-              </button>
+              {bill.status === 'PAID' && bill.paidAt && (
+                <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3 text-green-500" />
+                  Paid on {new Date(bill.paidAt).toLocaleDateString()}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Payment Requests */}
+      {paymentRequests.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-deep-teal mb-4">Payment Requests</h2>
+          <div className="bg-white rounded-xl shadow-lg border border-sage/20 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bill</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {paymentRequests.map((request) => (
+                    <tr key={request.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="font-medium text-deep-teal">{request.billName}</p>
+                          <p className="text-xs text-gray-500">Due {formatDate(request.dueDate)}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-medium text-deep-teal">
+                        {formatCurrency(request.amount)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          request.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                          request.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                          request.status === 'PROCESSED' ? 'bg-blue-100 text-blue-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {request.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">{request.reference}</code>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {new Date(request.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Link
+                          href={`/dashboard/bills/requests/${request.id}`}
+                          className="text-soft-gold hover:text-deep-teal"
+                        >
+                          <ChevronRight className="w-4 h-4 inline" />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       )}
 
-      {/* OTP Verification Modal */}
-      {showOtpModal && (
+      {/* Add Bill Modal */}
+      {showAddBill && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-deep-teal mb-4">Verify Payment</h2>
-            
-            <p className="text-gray-600 mb-6">
-              Enter the 6-digit code sent to your email to confirm this payment.
-            </p>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Verification Code
-              </label>
-              <input
-                type="text"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                placeholder="Enter 6-digit code"
-                className="w-full px-4 py-3 text-center text-2xl tracking-widest border border-gray-200 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
-              />
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-bold text-deep-teal">Add New Bill</h2>
             </div>
+            <form onSubmit={handleAddBill} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bill Name</label>
+                <input
+                  type="text"
+                  name="billName"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                  placeholder="e.g., Electricity Bill"
+                />
+              </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowOtpModal(false)
-                  setOtp('')
-                }}
-                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleOtpSubmit}
-                disabled={otp.length !== 6 || isProcessing}
-                className="flex-1 bg-deep-teal text-white px-4 py-2 rounded-lg hover:bg-soft-gold transition-colors disabled:opacity-50"
-              >
-                {isProcessing ? 'Verifying...' : 'Verify & Pay'}
-              </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bill Number (Optional)</label>
+                <input
+                  type="text"
+                  name="billNumber"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                  placeholder="Account or reference number"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                <select
+                  name="category"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                >
+                  <option value="">Select category</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    name="amount"
+                    required
+                    step="0.01"
+                    min="0"
+                    className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                <input
+                  type="date"
+                  name="dueDate"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="recurring"
+                    className="w-4 h-4 text-soft-gold focus:ring-soft-gold rounded"
+                  />
+                  <span className="text-sm text-gray-600">Recurring Bill</span>
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="autoPay"
+                    className="w-4 h-4 text-soft-gold focus:ring-soft-gold rounded"
+                  />
+                  <span className="text-sm text-gray-600">Auto Pay</span>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
+                <textarea
+                  name="notes"
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                  placeholder="Additional notes..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddBill(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-deep-teal to-sage btn-shimmer btn-shimmer text-white rounded-lg hover:shadow-lg transition-all"
+                >
+                  Add Bill
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Pay Bill Modal */}
+      {showPayBill && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-bold text-deep-teal">Pay Bill</h2>
+              <p className="text-sm text-gray-500 mt-1">{showPayBill.billName}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-soft-gold/5 rounded-lg p-4">
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-600">Amount Due</span>
+                  <span className="font-bold text-deep-teal">{formatCurrency(showPayBill.amount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Due Date</span>
+                  <span className="text-gray-800">{formatDate(showPayBill.dueDate)}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Pay From</label>
+                <select
+                  value={selectedAccount}
+                  onChange={(e) => setSelectedAccount(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-soft-gold focus:border-transparent"
+                >
+                  <option value="">Select account</option>
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.displayName} ({acc.maskedNumber}) - {formatCurrency(acc.balance)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-yellow-800">
+                    This payment will require admin approval before processing. 
+                    You'll be notified once it's approved.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPayBill(null)
+                    setSelectedAccount('')
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePayBill}
+                  disabled={!selectedAccount}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-deep-teal to-sage btn-shimmer btn-shimmer text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Submit Payment
+                </button>
+              </div>
             </div>
           </div>
         </div>

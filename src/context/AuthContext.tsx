@@ -1,61 +1,83 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-
-interface NotificationPreferences {
-  emailEnabled: boolean
-  pushEnabled: boolean
-  smsEnabled: boolean
-  theme: string
-}
+import { createContext, useContext, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface User {
   id: string
   email: string
-  name: string | null
+  firstName: string
+  lastName: string
   role: string
-  phone: string | null
-  avatar: string | null
-  twoFactorEnabled: boolean
-  notificationPreferences?: NotificationPreferences
-  createdAt: string
 }
 
 interface AuthContextType {
   user: User | null
-  setUser: (user: User | null) => void
   loading: boolean
-  logout: () => void
+  login: (email: string, password: string) => Promise<any>
+  logout: () => Promise<void>
+  isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
-    // Check for stored user data on mount
-    const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user')
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser))
-      } catch (error) {
-        console.error('Failed to parse stored user:', error)
-      }
-    }
-    setLoading(false)
+    checkAuth()
   }, [])
 
-  const logout = () => {
-    localStorage.removeItem('user')
-    sessionStorage.removeItem('user')
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/me')
+      if (response.ok) {
+        const data = await response.json()
+        setUser(data.user)
+      }
+    } catch (error) {
+      console.error('Auth check error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const login = async (email: string, password: string) => {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+
+    const data = await response.json()
+
+    if (response.ok) {
+      setUser(data.user)
+      // Set a client-side cookie for redundancy
+      document.cookie = `userId=${data.user.id}; path=/; max-age=604800; SameSite=Lax`
+    }
+
+    return data
+  }
+
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
     setUser(null)
-    window.location.href = '/auth/login'
+    // Clear client-side cookie
+    document.cookie = 'userId=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
+    router.push('/auth/login')
   }
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      login, 
+      logout,
+      isLoading: loading 
+    }}>
       {children}
     </AuthContext.Provider>
   )
