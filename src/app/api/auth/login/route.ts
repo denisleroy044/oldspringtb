@@ -8,6 +8,18 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
+    },
+  })
+}
+
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json()
@@ -19,7 +31,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Find user by email
     const result = await pool.query(
       'SELECT id, email, password, "firstName", "lastName", role FROM public.users WHERE email = $1',
       [email]
@@ -34,7 +45,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password)
 
     if (!isValidPassword) {
@@ -44,30 +54,25 @@ export async function POST(request: Request) {
       )
     }
 
-    // Set cookies for authentication
     const cookieStore = await cookies()
     
-    // Set user ID cookie - make sure it's properly set
     cookieStore.set({
       name: 'userId',
       value: user.id,
       httpOnly: true,
       path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production'
     })
 
-    // Return user data (without password)
     const { password: _, ...userWithoutPassword } = user
 
-    // Create response with user data
     const response = NextResponse.json({
       success: true,
       user: userWithoutPassword
     })
 
-    // Also set a non-httpOnly cookie for client-side access
     response.cookies.set({
       name: 'userId',
       value: user.id,
@@ -85,16 +90,4 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-}
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Credentials': 'true',
-    },
-  })
 }
