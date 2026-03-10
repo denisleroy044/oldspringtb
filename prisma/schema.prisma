@@ -1,0 +1,358 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model account_requests {
+  id          String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId      String
+  accountType String
+  status      String?   @default("PENDING")
+  adminNotes  String?
+  reviewedBy  String?
+  reviewedAt  DateTime? @db.Timestamp(6)
+  createdAt   DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime? @default(now()) @db.Timestamp(6)
+  users       users     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model accounts {
+  id                                                    String          @id
+  userId                                                String
+  accountNumber                                         String          @unique
+  accountType                                           String          @default("CHECKING")
+  balance                                               Decimal         @default(0) @db.Decimal(18, 2)
+  currency                                              String          @default("USD")
+  status                                                String          @default("ACTIVE")
+  createdAt                                             DateTime        @default(now())
+  updatedAt                                             DateTime
+  users                                                 users           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card_requests                                         card_requests[]
+  cards                                                 cards[]
+  deposits                                              deposits[]
+  transactions_transactions_receiverAccountIdToaccounts transactions[]  @relation("transactions_receiverAccountIdToaccounts")
+  transactions_transactions_senderAccountIdToaccounts   transactions[]  @relation("transactions_senderAccountIdToaccounts")
+  transfers_transfers_fromAccountIdToaccounts           transfers[]     @relation("transfers_fromAccountIdToaccounts")
+  transfers_transfers_toAccountIdToaccounts             transfers[]     @relation("transfers_toAccountIdToaccounts")
+}
+
+model blog_posts {
+  id         String   @id
+  title      String
+  slug       String   @unique
+  excerpt    String
+  content    String
+  category   String   @default("Company News")
+  imageUrl   String?
+  authorName String   @default("Oldspring Trust")
+  published  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+}
+
+model card_requests {
+  id         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId     String
+  accountId  String?
+  cardType   String
+  cardBrand  String
+  status     String?   @default("PENDING")
+  adminNotes String?
+  reviewedBy String?
+  reviewedAt DateTime? @db.Timestamp(6)
+  createdAt  DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime? @default(now()) @db.Timestamp(6)
+  accounts   accounts? @relation(fields: [accountId], references: [id], onUpdate: NoAction)
+  users      users     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([status], map: "idx_card_requests_status")
+  @@index([userId], map: "idx_card_requests_user")
+}
+
+model cards {
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId          String
+  accountId       String?
+  cardType        String
+  cardBrand       String
+  cardNumber      String    @unique
+  lastFour        String
+  cardholderName  String
+  expiryMonth     Int
+  expiryYear      Int
+  cvv             String
+  status          String?   @default("ACTIVE")
+  isVirtual       Boolean?  @default(false)
+  creditLimit     Decimal?  @db.Decimal(10, 2)
+  availableCredit Decimal?  @db.Decimal(10, 2)
+  currentBalance  Decimal?  @default(0) @db.Decimal(10, 2)
+  apr             Decimal?  @db.Decimal(5, 2)
+  rewardsPoints   Int?      @default(0)
+  issuedAt        DateTime? @default(now()) @db.Timestamp(6)
+  createdAt       DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime? @default(now()) @db.Timestamp(6)
+  accounts        accounts? @relation(fields: [accountId], references: [id], onUpdate: NoAction)
+  users           users     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([accountId], map: "idx_cards_account")
+  @@index([status], map: "idx_cards_status")
+  @@index([userId], map: "idx_cards_user")
+}
+
+model deposits {
+  id             String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId         String
+  accountId      String?
+  amount         Decimal   @db.Decimal(10, 2)
+  method         String
+  currency       String?   @default("USD")
+  cryptoCurrency String?
+  paymentDetails Json?
+  transactionId  String?
+  senderInfo     String?
+  adminNotes     String?
+  status         String?   @default("PENDING")
+  approvedBy     String?
+  approvedAt     DateTime? @db.Timestamp(6)
+  completedAt    DateTime? @db.Timestamp(6)
+  createdAt      DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime? @default(now()) @db.Timestamp(6)
+  accounts       accounts? @relation(fields: [accountId], references: [id], onUpdate: NoAction)
+  users          users     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model kyc_requests {
+  id           String    @id
+  userId       String
+  documentType String
+  documentUrl  String
+  status       String    @default("pending")
+  adminNotes   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime
+}
+
+model live_chat_messages {
+  id                 String             @id @default(dbgenerated("(gen_random_uuid())::text"))
+  session_id         String
+  user_id            String?
+  admin_id           String?
+  message            String
+  is_admin           Boolean?           @default(false)
+  is_read            Boolean?           @default(false)
+  created_at         DateTime?          @default(now()) @db.Timestamp(6)
+  live_chat_sessions live_chat_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users              users?             @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+}
+
+model live_chat_sessions {
+  id                 String               @id @default(dbgenerated("(gen_random_uuid())::text"))
+  user_id            String
+  session_id         String               @unique
+  status             String?              @default("active")
+  assigned_to        String?
+  started_at         DateTime?            @default(now()) @db.Timestamp(6)
+  ended_at           DateTime?            @db.Timestamp(6)
+  rating             Int?
+  feedback           String?
+  created_at         DateTime?            @default(now()) @db.Timestamp(6)
+  live_chat_messages live_chat_messages[]
+  users              users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model notification_preferences {
+  id                   String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  user_id              String    @unique
+  email_notifications  Boolean?  @default(true)
+  email_transactions   Boolean?  @default(true)
+  email_promotions     Boolean?  @default(false)
+  email_security       Boolean?  @default(true)
+  email_newsletter     Boolean?  @default(false)
+  push_notifications   Boolean?  @default(true)
+  push_transactions    Boolean?  @default(true)
+  push_security        Boolean?  @default(true)
+  push_reminders       Boolean?  @default(true)
+  sms_notifications    Boolean?  @default(false)
+  sms_transactions     Boolean?  @default(false)
+  sms_security         Boolean?  @default(true)
+  in_app_notifications Boolean?  @default(true)
+  in_app_transactions  Boolean?  @default(true)
+  in_app_security      Boolean?  @default(true)
+  in_app_promotions    Boolean?  @default(false)
+  marketing_emails     Boolean?  @default(false)
+  share_data           Boolean?  @default(false)
+  created_at           DateTime? @default(now()) @db.Timestamp(6)
+  updated_at           DateTime? @default(now()) @db.Timestamp(6)
+  users                users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model notifications {
+  id        String   @id
+  userId    String
+  title     String
+  message   String
+  type      String   @default("info")
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model otp_codes {
+  id        String   @id
+  userId    String
+  code      String
+  purpose   String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model security_settings {
+  id                         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  user_id                    String    @unique
+  two_factor_enabled         Boolean?  @default(false)
+  two_factor_method          String?
+  remember_me                Boolean?  @default(true)
+  session_timeout            Int?      @default(30)
+  max_sessions               Int?      @default(5)
+  login_alerts               Boolean?  @default(true)
+  suspicious_activity_alerts Boolean?  @default(true)
+  password_last_changed      DateTime? @db.Timestamp(6)
+  password_expiry_days       Int?      @default(90)
+  created_at                 DateTime? @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime? @default(now()) @db.Timestamp(6)
+  users                      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model support_tickets {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  user_id       String
+  ticket_number String    @unique
+  category      String
+  subject       String
+  description   String
+  priority      String?   @default("medium")
+  status        String?   @default("open")
+  attachments   Json[]
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
+  updated_at    DateTime? @default(now()) @db.Timestamp(6)
+  resolved_at   DateTime? @db.Timestamp(6)
+  closed_at     DateTime? @db.Timestamp(6)
+  users         users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model transactions {
+  id                                                String    @id
+  userId                                            String
+  senderAccountId                                   String?
+  receiverAccountId                                 String?
+  type                                              String
+  amount                                            Decimal   @db.Decimal(18, 2)
+  currency                                          String    @default("USD")
+  description                                       String?
+  reference                                         String    @unique
+  status                                            String    @default("COMPLETED")
+  createdAt                                         DateTime  @default(now())
+  updatedAt                                         DateTime
+  accounts_transactions_receiverAccountIdToaccounts accounts? @relation("transactions_receiverAccountIdToaccounts", fields: [receiverAccountId], references: [id])
+  accounts_transactions_senderAccountIdToaccounts   accounts? @relation("transactions_senderAccountIdToaccounts", fields: [senderAccountId], references: [id])
+  users                                             users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model transfers {
+  id                                         String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  userId                                     String
+  fromAccountId                              String
+  toAccountId                                String?
+  toAccountNumber                            String?
+  toBankName                                 String?
+  toAccountName                              String?
+  amount                                     Decimal   @db.Decimal(10, 2)
+  description                                String?
+  reference                                  String    @unique
+  status                                     String?   @default("PENDING")
+  type                                       String?   @default("TRANSFER")
+  fee                                        Decimal?  @default(0) @db.Decimal(10, 2)
+  completedAt                                DateTime? @db.Timestamp(6)
+  createdAt                                  DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt                                  DateTime? @default(now()) @db.Timestamp(6)
+  accounts_transfers_fromAccountIdToaccounts accounts  @relation("transfers_fromAccountIdToaccounts", fields: [fromAccountId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  accounts_transfers_toAccountIdToaccounts   accounts? @relation("transfers_toAccountIdToaccounts", fields: [toAccountId], references: [id], onUpdate: NoAction)
+  users                                      users     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([fromAccountId], map: "idx_transfers_from")
+  @@index([reference], map: "idx_transfers_reference")
+  @@index([status], map: "idx_transfers_status")
+  @@index([toAccountId], map: "idx_transfers_to")
+  @@index([userId], map: "idx_transfers_user")
+}
+
+model user_settings {
+  id                  String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  user_id             String    @unique
+  theme               String?   @default("light")
+  language            String?   @default("en")
+  timezone            String?   @default("UTC")
+  date_format         String?   @default("MM/DD/YYYY")
+  time_format         String?   @default("12h")
+  currency            String?   @default("USD")
+  default_dashboard   String?   @default("overview")
+  show_balances       Boolean?  @default(true)
+  show_transactions   Boolean?  @default(true)
+  show_goals          Boolean?  @default(true)
+  profile_visibility  String?   @default("private")
+  activity_visibility String?   @default("private")
+  reduced_motion      Boolean?  @default(false)
+  high_contrast       Boolean?  @default(false)
+  font_size           String?   @default("medium")
+  created_at          DateTime? @default(now()) @db.Timestamp(6)
+  updated_at          DateTime? @default(now()) @db.Timestamp(6)
+  users               users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model users {
+  id                       String                    @id
+  firstName                String
+  lastName                 String
+  email                    String                    @unique
+  phone                    String?
+  password                 String
+  role                     String                    @default("user")
+  accountType              String                    @default("personal")
+  emailVerified            Boolean                   @default(false)
+  kycStatus                String                    @default("pending")
+  twoFactorEnabled         Boolean                   @default(false)
+  isActive                 Boolean                   @default(true)
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime
+  address_line1            String?
+  address_line2            String?
+  city                     String?
+  state                    String?
+  postal_code              String?
+  country                  String?                   @default("US")
+  date_of_birth            DateTime?                 @db.Date
+  updated_at               DateTime?                 @default(now()) @db.Timestamp(6)
+  account_requests         account_requests[]
+  accounts                 accounts[]
+  card_requests            card_requests[]
+  cards                    cards[]
+  deposits                 deposits[]
+  live_chat_messages       live_chat_messages[]
+  live_chat_sessions       live_chat_sessions[]
+  notification_preferences notification_preferences?
+  notifications            notifications[]
+  otp_codes                otp_codes[]
+  security_settings        security_settings?
+  support_tickets          support_tickets[]
+  transactions             transactions[]
+  transfers                transfers[]
+  user_settings            user_settings?
+}
